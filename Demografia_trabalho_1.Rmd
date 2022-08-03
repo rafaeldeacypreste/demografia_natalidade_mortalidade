@@ -11,8 +11,12 @@ output:
   bookdown::html_document2:
     df_print: paged
     fig_caption: true
-    toc: true
-    toc_float: true
+    number_sections: no
+    theme: lumen
+    toc: no
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
   bookdown::pdf_document2:  
     citation_package: natbib
     fig_caption: true
@@ -42,7 +46,7 @@ knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE,
   echo    = TRUE,                 # Mostra os códigos automaticamente
-  eval    = TRUE,                  # se quiser rodar o código R - colocar TRUE
+  eval    = FALSE,                  # se quiser rodar o código R - colocar TRUE
   fig.cap = 'Elaboração própria.', # Legenda automática de figuras
   fig.pos = 'H'
 )
@@ -50,30 +54,32 @@ knitr::opts_chunk$set(
 ```
 
 
-# Introdução {-}
+# {#inic .tabset}
+
+## Introdução 
 
 
 
 Neste documento, estão os explicados os procedimentos para as respostas ao Primeiro trabalho: `TRABALHO 1 - Natalidade/Fecundidade e Mortalidade`, cujo prazo de entrega é dia 15/08/2022. Os pacotes utilizados foram:
 
 ```{r}
-library(microdatasus) # Download dos dados de 2000 a 2020
-library(tidyverse)    # Pacote de utilidades para manipulação e visualização
-library(kableExtra)   # Elaboração das tabelas em LaTeX e html
+library(microdatasus) ## Download dos dados de 2000 a 2020
+library(tidyverse)    ## Pacote de utilidades para manipulação e visualização
+library(kableExtra)   ## Elaboração das tabelas em LaTeX e html
 library(lubridate)
 ```
 
 
-# Download dos dados
+### Download dos dados
 
 
-## Dados de Nascidos Vivos a partir do SINASC
+### Dados de Nascidos Vivos a partir do SINASC
 
-### Microdados DATASUS
+#### Microdados DATASUS
 
 Os microdados do SINASC de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus), criado por @. Os procedimentos de pré-processamento dos micradodos realizados podem ser encontrados em: https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SINASC. Os dados para o Estado de Pernambuco podem ser baixados por
 
-```{r, eval=FALSE}
+```{r}
 dados_sinasc <- fetch_datasus(
   year_start         = 2000,
   year_end           = 2020,
@@ -82,31 +88,12 @@ dados_sinasc <- fetch_datasus(
 )
 ```
 
-```{r, echo=FALSE}
-# Como a conexão com a internet não é a melhor opção sempre para gerar o mkd
-# melhor fazer uma gambiarra por trás para ler mais rapidamente
-# Com isso, após baixar a primeira vez, a leitura de um objeto será direta
 
-# Primeira rodada
-# 
-# dados_sinasc %>% 
-#   fwrite(file = caminho_tabela)
-
-library(data.table)
-
-
-caminho_tabela <- 
- file.path(getwd(), "Demografia", "Atividades", "dados_sinasc.csv")
-
-dados_sinasc <- fread(caminho_tabela, encoding = "UTF-8")
-
-```
-
-### Dados preliminares
+### Dados preliminares 2021
 
 Para o ano de 2021, há apenas dados preliminares que podem ser tratados em:
 
-```{r, eval=FALSE}
+```{r}
 file <- "http://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sinasc/DN21OPEN.zip"
 temp <- tempfile()
 tempd <- tempdir()
@@ -124,21 +111,8 @@ unlink(tempd)
 ```
 
 
-```{r, echo=FALSE}
-# PAsso para não preicsar baixar o tempo todo:
-# 
-caminho_tabela <- 
-  file.path(getwd(), "Demografia", "Atividades", "dados_sinasc_2021.csv")
-# 
-# dados_sinasc_2021 %>% 
-#     fwrite(file = caminho_tabela)
 
-dados_sinasc_2021 <- fread(caminho_tabela, encoding = "UTF-8")
-
-```
-
-
-### Consolidação
+#### Consolidação dos dados de nascidos vivos
 
 Com isso, pode-se levantar os dados de nascimentos por ano e idade da mãe^[As células de idade vazias ou "99" indicam idade não definida.]:
 
@@ -150,11 +124,11 @@ dados_sinasc %>%
 ```
 
 
-## Dados de Nascidos Vivos a partir do SIM
+### Dados de Nascidos Vivos a partir do SIM
 
 Os microdados do SIM de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus), criado por @. As convenções adotadas no SIM podem ser encontradas em https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SIM. Os dados para o Estado de Pernambuco podem ser baixados por
 
-```{r, eval=FALSE}
+```{r}
 dados_sim <- fetch_datasus(
   year_start         = 2000,
   year_end           = 2020,
@@ -164,31 +138,11 @@ dados_sim <- fetch_datasus(
 ```
 
 
-```{r, echo=FALSE}
-# Como a conexão com a internet não é a melhor opção sempre para gerar o mkd
-# melhor fazer uma gambiarra por trás para ler mais rapidamente
-# Com isso, após baixar a primeira vez, a leitura de um objeto será direta
-
-# Primeira rodada
-
-# caminho_tabela <- 
-#  file.path(getwd(), "Demografia", "Atividades", "dados_sim.csv")
-#  
-# dados_sim %>% 
-#    fwrite(file = caminho_tabela)
-
-
-caminho_tabela <- 
- file.path(getwd(), "Demografia", "Atividades", "dados_sim.csv")
-
-dados_sim <- fread(caminho_tabela, encoding = "UTF-8")
-
-```
 
 ### Dados preliminares de óbitos (2021)
 
 
-```{r, eval=FALSE}
+```{r}
 file <- "http://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sim/DO21OPEN.zip"
 temp <- tempfile()
 tempd <- tempdir()
@@ -206,21 +160,9 @@ file.remove(temp)
 unlink(tempd)
 ```
 
-```{r, echo=FALSE}
-# PAsso para não preicsar baixar o tempo todo:
-# 
-caminho_tabela <- 
-  file.path(getwd(), "Demografia", "Atividades", "dados_sim_2021.csv")
-# 
-# dados_sim_2021 %>% 
-#      fwrite(file = caminho_tabela)
-
-dados_sim_2021 <- fread(caminho_tabela, encoding = "UTF-8")
-
-```
 
 
-### Consolidação
+#### Consolidação dos dados de óbitos
 
 Então, podemos contabilizar os óbitos com menos de 5 anos de idade (idade simples) no mesmo período:
 
@@ -229,32 +171,40 @@ Então, podemos contabilizar os óbitos com menos de 5 anos de idade (idade simp
 
 
 dados_sim %>%
-  # select(DTNASC, IDADE, DTOBITO) %>% # Descobrir como contar idade
+  ## select(DTNASC, IDADE, DTOBITO) %>% ## Descobrir como contar idade
   select(DTNASC, DTOBITO) %>%
-  mutate(                              # Transforma Data de nascimento em .date
+  mutate(                              ## Transforma Data de nascimento em .date
     DTNASC = as.character(DTNASC),
     DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
                        TRUE                    ~ DTNASC),
     DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
   ) %>%
-  mutate(                              # Transforma Data de óbito em .date
+  mutate(                              ## Transforma Data de óbito em .date
     DTOBITO = as.character(DTOBITO),
     DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
                         TRUE                     ~ DTOBITO),
     DTOBITO = parse_date(as.character(DTOBITO), format = "%d%m%Y")
   ) %>%
   mutate(Tempo_de_vida = time_length(interval(DTNASC, DTOBITO),
-                                     "year")) %>% # Calula idade de óbito
-  filter(DTNASC >= as.Date("1996-01-01"),         # Max 5 anos no período de análise
-         Tempo_de_vida < 5) %>%                   # Seleciona menores de 5 anos
-  count(year(DTOBITO), name = "Obito_menos_5_anos") # Conta registros
+                                     "year")) %>% ## Calula idade de óbito
+  filter(DTNASC >= as.Date("1996-01-01"),         ## Max 5 anos no período de análise
+         Tempo_de_vida < 5) %>%                   ## Seleciona menores de 5 anos
+  count(year(DTOBITO), name = "Obito_menos_5_anos") ## Conta registros
 
 ```
 
 
 
 
-# Questão 1
+## Questão 1
+
+
+## Questão 2
+
+
+## Questão 3
+
+
 
  
 
