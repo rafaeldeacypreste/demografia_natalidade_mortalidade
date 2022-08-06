@@ -68,7 +68,10 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load("microdatasus", ## Download dos dados de 2000 a 2020
                "tidyverse",    ## Pacote de utilidades para manipulação e visualização
                "kableExtra",   ## Elaboração das tabelas em LaTeX e html
-               "lubridate")
+               "lubridate",
+               "readxl")
+
+options(scipen = 99)
 ```
 
 
@@ -176,23 +179,23 @@ Então, podemos contabilizar os óbitos com menos de 5 anos de idade (idade simp
 dados_sim %>%
   ## select(DTNASC, IDADE, DTOBITO) %>% ## Descobrir como contar idade
   select(DTNASC, DTOBITO) %>%
-  mutate(                              ## Transforma Data de nascimento em .date
+  mutate(                              # Transforma Data de nascimento em .date
     DTNASC = as.character(DTNASC),
     DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
                        TRUE                    ~ DTNASC),
     DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
   ) %>%
-  mutate(                              ## Transforma Data de óbito em .date
+  mutate(                              # Transforma Data de óbito em .date
     DTOBITO = as.character(DTOBITO),
     DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
                         TRUE                     ~ DTOBITO),
     DTOBITO = parse_date(as.character(DTOBITO), format = "%d%m%Y")
   ) %>%
   mutate(Tempo_de_vida = time_length(interval(DTNASC, DTOBITO),
-                                     "year")) %>% ## Calula idade de óbito
-  filter(DTNASC >= as.Date("1996-01-01"),         ## Max 5 anos no período de análise
-         Tempo_de_vida < 5) %>%                   ## Seleciona menores de 5 anos
-  count(year(DTOBITO), name = "Obito_menos_5_anos") ## Conta registros
+                                     "year")) %>%   # Calula idade de óbito
+  filter(DTNASC >= as.Date("1996-01-01"),           # Max 5 anos no período de análise
+         Tempo_de_vida < 5) %>%                     # Seleciona menores de 5 anos
+  count(year(DTOBITO), name = "Obito_menos_5_anos") # Conta registros
 
 ```
 
@@ -210,15 +213,146 @@ dados_sim %>%
 
 **a)** *Com base nos dados sobre óbitos do SIM para 2019 a 2021 e a população por sexo e idade estimada (projetada) em 2020 para a UF, obtenha os seguintes indicadores:*
 
-Em primeiro lugar, deve-se acessar os dados 
+Em primeiro lugar, deve-se acessar os dados conforme a seção introdutória.
 
 >- Taxa Bruta de Mortalidade
 
   Taxa Bruta de Mortalidade diz respeito ao total do número de óbitos, por mil habitantes, na população residente no local e período de interesse. No presente exercício, avaliamos a taxa no Estado de Pernambuco, com o período centrado no ano de 2020.
   
-  
+O número de óbitos em 2020 é contabilizado por
+
+```{r}
+obitos_total_2020 <- 
+  dados_sim %>%
+  select(DTOBITO, TIPOBITO) %>%
+  filter(TIPOBITO == 2) %>% 
+  mutate(# Transforma Data de óbito em .date
+    DTOBITO = str_sub(DTOBITO,-4,-1)) %>%
+  count(DTOBITO) %>% 
+  filter(DTOBITO == 2020) %>%
+  pull(n)
+
+```
+
+Já o dado de população pode ser consultado em 
+
+```{r}
+file <-
+  "https://ftp.ibge.gov.br/Projecao_da_Populacao/Projecao_da_Populacao_2018/projecoes_2018_populacao_2010_2060_20200406.xls"
+
+temp_pop <- tempfile()
+
+
+download.file(url      = file,
+              destfile =  temp_pop,
+              mode     = "wb")
+
+pop_2020 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "L51:L52") %>%
+  pull()
+
+round(obitos_total_2020/pop_2020 * 1000, digits = 4)
+```
+
+
+Portando, a Taxa Bruta de Mortalidade por mil habitantes para o Estado de Pernambuco em 2020 foi `r round(obitos_total_2020 / pop_2020 * 1000, digits = 4)`.
 
 >- Taxas específicas de mortalidade por sexo e idade - nMx (grafique)
 
- 
+Em primeiro lugar, pode-se acessar as projeções populacionais por sexo e idade. Isso pode ser feito por
+
+```{r}
+faixas_etarias_IBGE <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "A7:A25",
+           col_names = FALSE) %>%
+  pull()
+
+faixas_etarias <- c("0-1", "2-4", faixas_etarias_IBGE[-1])
+
+
+pop_masc_2020 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "L7:L25",
+           col_names = "Pop_masc") %>%
+  pull()
+
+pop_fem_2020 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "L30:L48",
+           col_names = "Pop_fem") %>%
+  pull()
+
+pop_sex_ida_2020 <-
+  tibble(
+    "Faixa_etaria"  = faixas_etarias_IBGE,
+    "Pop_masc_2020" = pop_masc_2020,
+    "Pop_fem_2020"  = pop_fem_2020
+  )
+```
+
+
+Sem seguida, pode-se contabilizar o número de óbitos por faixa etária no ano de 2000:
+
+```{r}
+
+obitos_sex_ida_2020 <- 
+dados_sim %>%
+  select(DTNASC, DTOBITO, "Sexo" = SEXO) %>%
+  mutate(# Transforma Data de óbito em .date
+    Ano_obito = str_sub(DTOBITO, -4, -1)) %>%
+  filter(Ano_obito == 2020, 
+         Sexo %in% c(1, 2)) %>%
+  select(-Ano_obito) %>%
+  mutate(
+    # Transforma Data de nascimento em .date
+    DTNASC = as.character(DTNASC),
+    DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
+                       TRUE                    ~ DTNASC),
+    DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
+  ) %>%
+  mutate(
+    # Transforma Data de óbito em .date
+    DTOBITO = as.character(DTOBITO),
+    DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
+                        TRUE                     ~ DTOBITO),
+    DTOBITO = parse_date(as.character(DTOBITO), format = "%d%m%Y")
+  ) %>%
+  mutate(
+    Tempo_de_vida = time_length(interval(DTNASC, DTOBITO), # Calula idade de óbito
+                                "year"),
+    Faixa_etaria = cut(
+      Tempo_de_vida,
+      breaks         = c(0, seq(from = 5, to = 90, by = 5), 120),
+      right          = FALSE,
+      include.lowest = TRUE,
+      labels         = faixas_etarias_IBGE
+    )
+  )    %>% 
+ drop_na() %>% # Data de nascimento desconhecida
+ count(Sexo, Faixa_etaria) %>% 
+ pivot_wider(names_from = Sexo,
+             values_from = n) %>% 
+  rename("Obitos_masc" = `1`,
+         "Obitos_fem" = `2`)
+
+
+
+```
+
+Agora, as duas tabelas podem ser juntadas para contabilizarmos as taxas específicas 
+
+```{r}
+
+obitos_sex_ida_2020 %>% 
+  left_join(pop_sex_ida_2020) %>% 
+  mutate("nMx Masc" = Obitos_masc / Pop_masc_2020,
+         "nMx Fem" = Obitos_fem / Pop_fem_2020)
+```
+
 
