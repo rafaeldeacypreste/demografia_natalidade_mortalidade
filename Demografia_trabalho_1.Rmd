@@ -348,11 +348,70 @@ dados_sim %>%
 Agora, as duas tabelas podem ser juntadas para contabilizarmos as taxas específicas 
 
 ```{r}
+nMx_PE_2020 <-
+  obitos_sex_ida_2020 %>%
+  left_join(pop_sex_ida_2020) %>%
+  mutate(
+    "nMx Masc" = Obitos_masc / Pop_masc_2020,
+    "nMx Fem"  = Obitos_fem / Pop_fem_2020,
+    Faixa_etaria = factor(
+      Faixa_etaria,
+      levels = c(
+        "0-4",
+        "5-9",
+        "10-14",
+        "15-19",
+        "20-24",
+        "25-29",
+        "30-34",
+        "35-39",
+        "40-44",
+        "45-49",
+        "50-54",
+        "55-59",
+        "60-64",
+        "65-69",
+        "70-74",
+        "75-79",
+        "80-84",
+        "85-89",
+        "90+"
+      )
+    )
+  )
+```
 
-obitos_sex_ida_2020 %>% 
-  left_join(pop_sex_ida_2020) %>% 
-  mutate("nMx Masc" = Obitos_masc / Pop_masc_2020,
-         "nMx Fem" = Obitos_fem / Pop_fem_2020)
+cujo gráfico pode ser visualizado em 
+
+```{r}
+nMx_PE_2020 %>%
+  rename("Feminino"  = `nMx Fem`,
+         "Masculino" = `nMx Masc`) %>%
+  select(Faixa_etaria, Masculino, Feminino) %>%
+  pivot_longer(
+    cols = c(Masculino, Feminino),
+    values_to = "nMx",
+    names_to  = "Categoria"
+  ) %>%
+  ggplot(aes(
+    x     = Faixa_etaria,
+    y     = nMx,
+    group = Categoria,
+    color = Categoria
+  )) +
+  geom_line(size = 1.25) +
+  scale_y_log10() +
+  theme_bw() +
+  labs(x = "Faixa etária",
+       color = NULL) +
+  theme(
+    axis.title.y = element_text(angle = 0, size = 12, face = "bold"),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.ticks = element_line(color = "gray"),
+    panel.grid.minor   = element_blank(),
+    panel.grid.major.x = element_blank()
+  )
 ```
 
 
+**b)** *Calcule a TMI, utilizando o número médio de óbitos ocorridos entre 2019 e 2021 e o número de nascimentos de 2020. Calcule os indicadores: taxa de mortalidade neonatal, neonatal precoce, neonatal tardia, posneonatal. Agregando a informação sobre óbitos fetais para os mesmos anos, calcule a taxa de mortalidade perinatal.*
