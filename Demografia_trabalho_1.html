@@ -14,7 +14,7 @@
 <meta name="author" content="Marco Aurélio" />
 <meta name="author" content="Rafael de Acypreste" />
 
-<meta name="date" content="2022-02-08" />
+<meta name="date" content="2022-06-08" />
 
 <title>TRABALHO 1 - Natalidade/Fecundidade e Mortalidade</title>
 
@@ -176,7 +176,7 @@ pre code {
 <h4 class="author">João<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></h4>
 <h4 class="author">Marco Aurélio<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></h4>
 <h4 class="author">Rafael de Acypreste<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a></h4>
-<h4 class="date">02/08/2022</h4>
+<h4 class="date">06/08/2022</h4>
 
 </div>
 
@@ -186,10 +186,12 @@ pre code {
 <div id="introdução" class="section level2">
 <h2>Introdução</h2>
 <p>Neste documento, estão os explicados os procedimentos para as respostas ao Primeiro trabalho: <code>TRABALHO 1 - Natalidade/Fecundidade e Mortalidade</code>, cujo prazo de entrega é dia 15/08/2022. Os pacotes utilizados foram:</p>
-<pre class="r"><code>library(microdatasus) ## Download dos dados de 2000 a 2020
-library(tidyverse)    ## Pacote de utilidades para manipulação e visualização
-library(kableExtra)   ## Elaboração das tabelas em LaTeX e html
-library(lubridate)</code></pre>
+<pre class="r"><code>if (!require(&quot;pacman&quot;)) install.packages(&quot;pacman&quot;)
+
+pacman::p_load(&quot;microdatasus&quot;, ## Download dos dados de 2000 a 2020
+               &quot;tidyverse&quot;,    ## Pacote de utilidades para manipulação e visualização
+               &quot;kableExtra&quot;,   ## Elaboração das tabelas em LaTeX e html
+               &quot;lubridate&quot;)</code></pre>
 <div id="download-dos-dados" class="section level3">
 <h3>Download dos dados</h3>
 </div>
@@ -253,9 +255,11 @@ utils::download.file(file, temp, mode = &quot;wb&quot;)
 unzip(temp, exdir = tempd)
 
 
-dados_sim_2021 &lt;- foreign::read.dbf(file.path(tempd, &quot;DO21OPEN.dbf&quot;))
+dados_sim_2021 &lt;-
+  foreign::read.dbf(file.path(tempd, &quot;DO21OPEN.dbf&quot;)) %&gt;% # Importa a tabela .dbf
+  filter(str_detect(CODMUNRES, &quot;^26&quot;)) # Filtra pessoas residentes apenas em PE
 
- 
+
 file.remove(temp)
 unlink(tempd)</code></pre>
 <div id="consolidação-dos-dados-de-óbitos" class="section level4">
@@ -292,6 +296,19 @@ unlink(tempd)</code></pre>
 </div>
 <div id="questão-3" class="section level2">
 <h2>Questão 3</h2>
+<p><strong>a)</strong> <em>Com base nos dados sobre óbitos do SIM para 2019 a 2021 e a população por sexo e idade estimada (projetada) em 2020 para a UF, obtenha os seguintes indicadores:</em></p>
+<p>Em primeiro lugar, deve-se acessar os dados</p>
+<blockquote>
+<ul>
+<li>Taxa Bruta de Mortalidade</li>
+</ul>
+</blockquote>
+<p>Taxa Bruta de Mortalidade diz respeito ao total do número de óbitos, por mil habitantes, na população residente no local e período de interesse. No presente exercício, avaliamos a taxa no Estado de Pernambuco, com o período centrado no ano de 2020.</p>
+<blockquote>
+<ul>
+<li>Taxas específicas de mortalidade por sexo e idade - nMx (grafique)</li>
+</ul>
+</blockquote>
 </div>
 </div>
 <div class="footnotes">

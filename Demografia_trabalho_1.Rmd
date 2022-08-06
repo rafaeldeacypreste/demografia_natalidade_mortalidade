@@ -63,10 +63,12 @@ knitr::opts_chunk$set(
 Neste documento, estão os explicados os procedimentos para as respostas ao Primeiro trabalho: `TRABALHO 1 - Natalidade/Fecundidade e Mortalidade`, cujo prazo de entrega é dia 15/08/2022. Os pacotes utilizados foram:
 
 ```{r}
-library(microdatasus) ## Download dos dados de 2000 a 2020
-library(tidyverse)    ## Pacote de utilidades para manipulação e visualização
-library(kableExtra)   ## Elaboração das tabelas em LaTeX e html
-library(lubridate)
+if (!require("pacman")) install.packages("pacman")
+
+pacman::p_load("microdatasus", ## Download dos dados de 2000 a 2020
+               "tidyverse",    ## Pacote de utilidades para manipulação e visualização
+               "kableExtra",   ## Elaboração das tabelas em LaTeX e html
+               "lubridate")
 ```
 
 
@@ -153,9 +155,11 @@ utils::download.file(file, temp, mode = "wb")
 unzip(temp, exdir = tempd)
 
 
-dados_sim_2021 <- foreign::read.dbf(file.path(tempd, "DO21OPEN.dbf"))
+dados_sim_2021 <-
+  foreign::read.dbf(file.path(tempd, "DO21OPEN.dbf")) %>% # Importa a tabela .dbf
+  filter(str_detect(CODMUNRES, "^26")) # Filtra pessoas residentes apenas em PE
 
- 
+
 file.remove(temp)
 unlink(tempd)
 ```
@@ -168,7 +172,6 @@ Então, podemos contabilizar os óbitos com menos de 5 anos de idade (idade simp
 
 
 ```{r}
-
 
 dados_sim %>%
   ## select(DTNASC, IDADE, DTOBITO) %>% ## Descobrir como contar idade
@@ -205,6 +208,17 @@ dados_sim %>%
 ## Questão 3
 
 
+**a)** *Com base nos dados sobre óbitos do SIM para 2019 a 2021 e a população por sexo e idade estimada (projetada) em 2020 para a UF, obtenha os seguintes indicadores:*
+
+Em primeiro lugar, deve-se acessar os dados 
+
+>- Taxa Bruta de Mortalidade
+
+  Taxa Bruta de Mortalidade diz respeito ao total do número de óbitos, por mil habitantes, na população residente no local e período de interesse. No presente exercício, avaliamos a taxa no Estado de Pernambuco, com o período centrado no ano de 2020.
+  
+  
+
+>- Taxas específicas de mortalidade por sexo e idade - nMx (grafique)
 
  
 
