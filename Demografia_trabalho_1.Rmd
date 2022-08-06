@@ -46,7 +46,7 @@ knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE,
   echo    = TRUE,                 # Mostra os códigos automaticamente
-  eval    = FALSE,                  # se quiser rodar o código R - colocar TRUE
+  eval    = TRUE,                  # se quiser rodar o código R - colocar TRUE
   fig.cap = 'Elaboração própria.', # Legenda automática de figuras
   fig.pos = 'H'
 )
@@ -99,9 +99,11 @@ dados_sinasc <- fetch_datasus(
 Para o ano de 2021, há apenas dados preliminares que podem ser tratados em:
 
 ```{r}
-file <- "http://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sinasc/DN21OPEN.zip"
+file <- "https://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sinasc/DN21OPEN.zip"
 temp <- tempfile()
 tempd <- tempdir()
+
+
 
 utils::download.file(file, temp, mode = "wb")
 
@@ -148,7 +150,7 @@ dados_sim <- fetch_datasus(
 
 
 ```{r}
-file <- "http://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sim/DO21OPEN.zip"
+file <- "https://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sim/DO21OPEN.zip"
 temp <- tempfile()
 tempd <- tempdir()
 
