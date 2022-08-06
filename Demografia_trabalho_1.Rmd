@@ -45,7 +45,7 @@ editor_options:
 knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE,
-  echo    = TRUE,                 # Mostra os códigos automaticamente
+  echo    = FALSE,                 # Mostra os códigos automaticamente
   eval    = TRUE,                  # se quiser rodar o código R - colocar TRUE
   fig.cap = 'Elaboração própria.', # Legenda automática de figuras
   fig.pos = 'H'
@@ -64,6 +64,11 @@ Neste documento, estão os explicados os procedimentos para as respostas ao Prim
 
 ```{r}
 if (!require("pacman")) install.packages("pacman")
+
+if (!require("microdatasus")) {
+  pacman::p_load("remotes")
+  remotes::install_github("rfsaldanha/microdatasus")
+}
 
 pacman::p_load("microdatasus", ## Download dos dados de 2000 a 2020
                "tidyverse",    ## Pacote de utilidades para manipulação e visualização
@@ -85,6 +90,7 @@ options(scipen = 99)
 Os microdados do SINASC de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus), criado por @. Os procedimentos de pré-processamento dos micradodos realizados podem ser encontrados em: https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SINASC. Os dados para o Estado de Pernambuco podem ser baixados por
 
 ```{r}
+  # Download dos microdados do datasus
 dados_sinasc <- fetch_datasus(
   year_start         = 2000,
   year_end           = 2020,
@@ -99,20 +105,27 @@ dados_sinasc <- fetch_datasus(
 Para o ano de 2021, há apenas dados preliminares que podem ser tratados em:
 
 ```{r}
+  # Repositório Ministério da Saúde
 file <- "https://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sinasc/DN21OPEN.zip"
+  
+  # Cria arquivo temporário para download do arquivo .zip
 temp <- tempfile()
-tempd <- tempdir()
-
-
-
+  
+  # Download do arquivo
 utils::download.file(file, temp, mode = "wb")
 
 
+  # Cria pasta temporária para descompactar arquivo .zip
+tempd <- tempdir()
+  
+  # Descompacta o arquivo
 unzip(temp, exdir = tempd)
 
 
-dados_sinasc_2021 <- foreign::read.dbf(file.path(tempd, "DN21OPEN.dbf"))
+dados_sinasc_2021 <- foreign::read.dbf(file.path(tempd, "DN21OPEN.dbf")) %>% # Importa a tabela .dbf
+  filter(str_detect(CODMUNRES, "^26")) # Filtra pessoas residentes apenas em PE
 
+  # Remove arquivo e pasta temporárias
 file.remove(temp)
 unlink(tempd)
 ```
@@ -150,6 +163,8 @@ dados_sim <- fetch_datasus(
 
 
 ```{r}
+
+  # Mesmo procedimento para os dados do SINASC
 file <- "https://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sim/DO21OPEN.zip"
 temp <- tempfile()
 tempd <- tempdir()
@@ -170,34 +185,22 @@ unlink(tempd)
 ```
 
 
+Também precisamos dos dados de projeção populacional para o Estado de Pernambuco. Nesse caso, utilizamos as projeções elaboradas pelo próprio IBGE e disponíveis [aqui](https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&t=resultados).
 
-#### Consolidação dos dados de óbitos
-
-Então, podemos contabilizar os óbitos com menos de 5 anos de idade (idade simples) no mesmo período:
-
+Com isso, tem-se as projeções populacionais por sexo e idade. Os dados de projeção populacional do IBGE podem ser acessados em: 
 
 ```{r}
+  # Repositório do IBGE para a tabela .xls
+file <-
+  "https://ftp.ibge.gov.br/Projecao_da_Populacao/Projecao_da_Populacao_2018/projecoes_2018_populacao_2010_2060_20200406.xls"
 
-dados_sim %>%
-  ## select(DTNASC, IDADE, DTOBITO) %>% ## Descobrir como contar idade
-  select(DTNASC, DTOBITO) %>%
-  mutate(                              # Transforma Data de nascimento em .date
-    DTNASC = as.character(DTNASC),
-    DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
-                       TRUE                    ~ DTNASC),
-    DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
-  ) %>%
-  mutate(                              # Transforma Data de óbito em .date
-    DTOBITO = as.character(DTOBITO),
-    DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
-                        TRUE                     ~ DTOBITO),
-    DTOBITO = parse_date(as.character(DTOBITO), format = "%d%m%Y")
-  ) %>%
-  mutate(Tempo_de_vida = time_length(interval(DTNASC, DTOBITO),
-                                     "year")) %>%   # Calula idade de óbito
-  filter(DTNASC >= as.Date("1996-01-01"),           # Max 5 anos no período de análise
-         Tempo_de_vida < 5) %>%                     # Seleciona menores de 5 anos
-  count(year(DTOBITO), name = "Obito_menos_5_anos") # Conta registros
+  # Arquivo temporário para download da tabela
+temp_pop <- tempfile()
+
+  # Download da tabela em formato compatível com Windows
+download.file(url      = file,
+              destfile =  temp_pop,
+              mode     = "wb")
 
 ```
 
@@ -211,35 +214,23 @@ dados_sim %>%
 
 a) 
 
-Em primeiro lugar, pode-se acessar as projeções populacionais por sexo e idade. Os dados de projeção populacional do IBGE podem ser acessados em: 
+
+A partir da tabela de projeção, é possível acessar as projeções por sexo e idade.
 
 ```{r}
-file <-
-  "https://ftp.ibge.gov.br/Projecao_da_Populacao/Projecao_da_Populacao_2018/projecoes_2018_populacao_2010_2060_20200406.xls"
-
-temp_pop <- tempfile()
-
-
-download.file(url      = file,
-              destfile =  temp_pop,
-              mode     = "wb")
-```
-
-
-
-Isso pode ser feito por
-
-```{r}
+  # Faixas etárias divulgadas pelo IBGE
 faixas_etarias_IBGE <-
-  read_xls(temp_pop,
-           sheet = "PE",
-           range = "A7:A25",
-           col_names = FALSE) %>%
-  pull()
+  read_xls(temp_pop,               # Arquivo temporário com a tabela de projeções
+           sheet = "PE",           # Aba de Pernambuco
+           range = "A7:A25",       # Células com a informação de interesse
+           col_names = FALSE) %>%  # Sem nomes das colunas 
+  pull()                           # Extrai as informações como um vetor
 
+  # Subdicisão da primeira faixa etária divulgadas pelo IBGE
 faixas_etarias <- c("0-1", "2-4", faixas_etarias_IBGE[-1])
 
 
+  # Lenvantamento da população masculina
 pop_masc_2020 <-
   read_xls(temp_pop,
            sheet = "PE",
@@ -247,6 +238,7 @@ pop_masc_2020 <-
            col_names = "Pop_masc") %>%
   pull()
 
+  # Lenvantamento da população feminina
 pop_fem_2020 <-
   read_xls(temp_pop,
            sheet = "PE",
@@ -254,6 +246,7 @@ pop_fem_2020 <-
            col_names = "Pop_fem") %>%
   pull()
 
+  # Lenvantamento da população total
 pop_tot_2020 <-
   read_xls(temp_pop,
            sheet = "PE",
@@ -261,6 +254,7 @@ pop_tot_2020 <-
            col_names = "Pop_tot") %>%
   pull()
 
+  # Ajuste de toda a população
 pop_sex_ida_2020 <-
   tibble(
     "Faixa_etaria"  = faixas_etarias_IBGE,
@@ -268,6 +262,9 @@ pop_sex_ida_2020 <-
     "Pop_fem_2020"  = pop_fem_2020,
     "Pop_tot_2020"  = pop_tot_2020
   )
+  
+  # Visualiza os dados no arquivo .html
+pop_sex_ida_2020
 ```
 
 
@@ -289,12 +286,12 @@ O número de óbitos em 2020 é contabilizado por
 ```{r}
 obitos_total_2020 <- 
   dados_sim %>%
-  select(DTOBITO, TIPOBITO) %>%
-  filter(TIPOBITO == 2) %>% 
+  select(DTOBITO, TIPOBITO) %>% # Seleciona as colunas de interesse
+  filter(TIPOBITO == 2) %>%     # Seleciona óbitos não fetais
   mutate(# Transforma Data de óbito em .date
-    DTOBITO = str_sub(DTOBITO,-4,-1)) %>%
-  count(DTOBITO) %>% 
-  filter(DTOBITO == 2020) %>%
+    DTOBITO = str_sub(DTOBITO,-4,-1)) %>% # Identifica o ano do óbito
+  count(DTOBITO) %>%                      # Conta as linhas em cada ano
+  filter(DTOBITO == 2020) %>%             # Filtra apenas o ano 2020
   pull(n)
 
 ```
@@ -302,10 +299,11 @@ obitos_total_2020 <-
 Já o dado de população pode ser consultado em 
 
 ```{r}
+  # Identifica o valor da população total em 2020
 pop_2020 <-
   read_xls(temp_pop,
            sheet = "PE",
-           range = "L51:L52") %>%
+           range = "L51:L52") %>% # Células com a informação
   pull()
 
 ```
@@ -315,63 +313,27 @@ Portando, a Taxa Bruta de Mortalidade por mil habitantes para o Estado de Pernam
 
 >- Taxas específicas de mortalidade por sexo e idade - nMx (grafique)
 
-Em primeiro lugar, pode-se acessar as projeções populacionais por sexo e idade. Isso pode ser feito por
+As projeções populacionais por sexo e idade já foram coletadas na questão 2 e serão aproveitadas nesta.
 
-```{r}
-faixas_etarias_IBGE <-
-  read_xls(temp_pop,
-           sheet = "PE",
-           range = "A7:A25",
-           col_names = FALSE) %>%
-  pull()
-
-faixas_etarias <- c("0-1", "2-4", faixas_etarias_IBGE[-1])
-
-
-pop_masc_2020 <-
-  read_xls(temp_pop,
-           sheet = "PE",
-           range = "L7:L25",
-           col_names = "Pop_masc") %>%
-  pull()
-
-pop_fem_2020 <-
-  read_xls(temp_pop,
-           sheet = "PE",
-           range = "L30:L48",
-           col_names = "Pop_fem") %>%
-  pull()
-
-pop_sex_ida_2020 <-
-  tibble(
-    "Faixa_etaria"  = faixas_etarias_IBGE,
-    "Pop_masc_2020" = pop_masc_2020,
-    "Pop_fem_2020"  = pop_fem_2020
-  )
-```
-
-
-Sem seguida, pode-se contabilizar o número de óbitos por faixa etária no ano de 2000:
+Em seguida, pode-se contabilizar o número de óbitos por faixa etária no ano de 2020:
 
 ```{r}
 
 obitos_sex_ida_2020 <- 
 dados_sim %>%
-  select(DTNASC, DTOBITO, "Sexo" = SEXO) %>%
+  select(DTNASC, DTOBITO, "Sexo" = SEXO) %>% 
   mutate(# Transforma Data de óbito em .date
     Ano_obito = str_sub(DTOBITO, -4, -1)) %>%
   filter(Ano_obito == 2020, 
-         Sexo %in% c(1, 2)) %>%
-  select(-Ano_obito) %>%
-  mutate(
-    # Transforma Data de nascimento em .date
-    DTNASC = as.character(DTNASC),
-    DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
-                       TRUE                    ~ DTNASC),
-    DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
+         Sexo %in% c(1, 2)) %>% # Seleciona a coluna de sexo para identificar entre masc e fem
+  select(-Ano_obito) %>%        # Exclui coluna sem mais utilidade
+  mutate(    # Transforma Data de nascimento em .date
+    DTNASC = as.character(DTNASC),                                # Muda formato
+    DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),# Insere 0 à esquerda para igualar
+                       TRUE                    ~ DTNASC),         # todas as datas de nascimento
+    DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")  # Transforma em formato de data
   ) %>%
-  mutate(
-    # Transforma Data de óbito em .date
+  mutate(    # Transforma Data de óbito em .date
     DTOBITO = as.character(DTOBITO),
     DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
                         TRUE                     ~ DTOBITO),
@@ -379,36 +341,37 @@ dados_sim %>%
   ) %>%
   mutate(
     Tempo_de_vida = time_length(interval(DTNASC, DTOBITO), # Calula idade de óbito
-                                "year"),
-    Faixa_etaria = cut(
-      Tempo_de_vida,
-      breaks         = c(0, seq(from = 5, to = 90, by = 5), 120),
+                                "year"),                   # em anos
+    Faixa_etaria = cut(                                    # A partir do tempo de vida
+      Tempo_de_vida,                                       # divide em grupos
+      breaks         = c(0, seq(from = 5, to = 90, by = 5), 120), # Períodos de quebra
       right          = FALSE,
       include.lowest = TRUE,
-      labels         = faixas_etarias_IBGE
+      labels         = faixas_etarias_IBGE                 # Nomes dos intervalos etários
     )
   )    %>% 
- drop_na() %>% # Data de nascimento desconhecida
- count(Sexo, Faixa_etaria) %>% 
- pivot_wider(names_from = Sexo,
+ drop_na() %>%   # Retuira casos com data de nascimento desconhecida
+ count(Sexo, Faixa_etaria) %>%    # Conta os nascimentos por sexo e faixa etária
+ pivot_wider(names_from = Sexo,   # Espalha as colunas do sexo
              values_from = n) %>% 
-  rename("Obitos_masc" = `1`,
+  rename("Obitos_masc" = `1`,     # Renomeia para nome objetivo
          "Obitos_fem" = `2`)
 
 
 
 ```
 
-Agora, as duas tabelas podem ser juntadas para contabilizarmos as taxas específicas 
 
 ```{r}
+  # Agora, as duas tabelas podem ser juntadas para contabilizar as taxas específicas 
 nMx_PE_2020 <-
-  obitos_sex_ida_2020 %>%
-  left_join(pop_sex_ida_2020) %>%
-  mutate(
-    "nMx Masc" = Obitos_masc / Pop_masc_2020,
+  obitos_sex_ida_2020 %>%          
+  left_join(pop_sex_ida_2020) %>% # Junta população à tabela de óbitos
+  select(-Pop_tot_2020) %>% 
+  mutate( 
+    "nMx Masc" = Obitos_masc / Pop_masc_2020, # Calcula os nMx
     "nMx Fem"  = Obitos_fem / Pop_fem_2020,
-    Faixa_etaria = factor(
+    Faixa_etaria = factor(                   # Transforma em factor para plotar
       Faixa_etaria,
       levels = c(
         "0-4",
@@ -433,28 +396,46 @@ nMx_PE_2020 <-
       )
     )
   )
+
+nMx_PE_2020 %>%
+  kbl(
+    format    = "html",
+    align     = "c", 
+    digits    = 5,
+    booktabs  = TRUE,
+    col.names = c("Faixa Etária", "Óbitos Masculinos",
+                  "Óbitos Femininos", "População Masculina",
+                  "População Feminina", "nMx \n Masculina",
+                  "nMx Feminina")) %>%
+  footnote(
+    general  = "Dados do SIM do Ministério da Saúde referentes ao ano de 2020.",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE
+  ) %>%
+  kable_styling("striped")
 ```
 
 cujo gráfico pode ser visualizado em 
 
 ```{r}
+  # Gráfico das nMx
 nMx_PE_2020 %>%
-  rename("Feminino"  = `nMx Fem`,
-         "Masculino" = `nMx Masc`) %>%
-  select(Faixa_etaria, Masculino, Feminino) %>%
+  rename("Feminino"  = `nMx Fem`,   # Ajusta nomes que aparecerão na legenda
+         "Masculino" = `nMx Masc`) %>% 
+  select(Faixa_etaria, Masculino, Feminino) %>% # Informações a irem para o gráfico
   pivot_longer(
-    cols = c(Masculino, Feminino),
-    values_to = "nMx",
+    cols = c(Masculino, Feminino),  # Formato longer para que sejam plotadas no mesmo gráfico
+    values_to = "nMx",              # na legenda
     names_to  = "Categoria"
   ) %>%
   ggplot(aes(
     x     = Faixa_etaria,
     y     = nMx,
-    group = Categoria,
-    color = Categoria
+    group = Categoria,    # Usa o factor para entender a ordem das faixas etárias no eixo x
+    color = Categoria     # Desenha uma curva para cada sexo
   )) +
   geom_line(size = 1.25) +
-  scale_y_log10() +
+  scale_y_log10() +       # Escala de log para os valores de nMx
   theme_bw() +
   labs(x = "Faixa etária",
        color = NULL) +
@@ -463,9 +444,187 @@ nMx_PE_2020 %>%
     axis.title.x = element_text(size = 12, face = "bold"),
     axis.ticks = element_line(color = "gray"),
     panel.grid.minor   = element_blank(),
-    panel.grid.major.x = element_blank()
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom"
   )
 ```
 
 
 **b)** *Calcule a TMI, utilizando o número médio de óbitos ocorridos entre 2019 e 2021 e o número de nascimentos de 2020. Calcule os indicadores: taxa de mortalidade neonatal, neonatal precoce, neonatal tardia, posneonatal. Agregando a informação sobre óbitos fetais para os mesmos anos, calcule a taxa de mortalidade perinatal.*
+
+
+```{r}
+  # Cálculo da média de óbitos em 2019 e 2020 com procedimentos semelhantes já aplicados
+obitos_infantis_2019_2020 <-
+  dados_sim %>%
+  select(DTNASC, TIPOBITO, DTOBITO, "Sexo" = SEXO) %>%
+  mutate(
+    Ano_obito = str_sub(DTOBITO,-4,-1)) %>%
+  filter(Ano_obito %in% c(2019, 2020),
+         Sexo %in% c(1, 2)) %>%
+  mutate(
+    DTNASC = as.character(DTNASC),
+    DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
+                       TRUE                    ~ DTNASC),
+    DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
+  ) %>%
+  mutate(
+    DTOBITO = as.character(DTOBITO),
+    DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
+                        TRUE                     ~ DTOBITO),
+    DTOBITO = parse_date(as.character(DTOBITO), format = "%d%m%Y")
+  ) %>%
+  mutate(Tempo_de_vida = time_length(interval(DTNASC, DTOBITO), # Caclula idade de óbito em dias 
+                                     "days"))    %>%
+  filter(Tempo_de_vida < 365) %>% # Mortes com menos de um ano
+  drop_na()                       # Exclui Data de nascimento desconhecida
+
+
+  # Cálculo da média de óbitos em 2021
+obitos_infantis_2021 <-  
+  dados_sim_2021 %>%
+  select(DTNASC, TIPOBITO, DTOBITO, "Sexo" = SEXO) %>%
+  filter(Sexo %in% c(1, 2)) %>%
+  mutate(
+    DTNASC = as.character(DTNASC),
+    DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
+                       TRUE                    ~ DTNASC),
+    DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
+  ) %>%
+  mutate(
+    DTOBITO = as.character(DTOBITO),
+    DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
+                        TRUE                     ~ DTOBITO),
+    DTOBITO = parse_date(as.character(DTOBITO), format = "%d%m%Y")
+  ) %>%
+  mutate(Tempo_de_vida = time_length(interval(DTNASC, DTOBITO), 
+                                     "days"))    %>%
+  drop_na() %>% 
+  filter(Tempo_de_vida < 365) %>% 
+  mutate(Ano_obito = "2021")
+
+
+  # Junta os dados de 2019 a 2021
+obitos_infantis_2019_2021 <- 
+obitos_infantis_2019_2020 %>% 
+  bind_rows(obitos_infantis_2021)
+
+  # Calcula a média do período e extrai apenas o resultado
+media_obitos_menos_1ano_2019_2021 <-
+  obitos_infantis_2019_2021 %>%
+  count(Ano_obito) %>%
+  summarise(mean(n)) %>%
+  pull()
+```
+
+```{r}
+
+  # Nascidos vivos em 2020
+nascidos_vivos_2020 <- 
+dados_sinasc %>% 
+  select(DTNASC) %>% 
+  mutate(DTNASC = str_sub(DTNASC, -4, -1)) %>% 
+  filter(DTNASC == 2020) %>% 
+  count(DTNASC) %>% 
+  pull(n)
+
+  # Taxa de Mortalidade infantil
+TMI_2020 <- media_obitos_menos_1ano_2019_2021 / nascidos_vivos_2020 * 1000
+```     
+
+A Taxa de Mortalidade Infantil com média móvel de mortes centrada em 2020 pelo número de nascimentos em 2020 por mil habitantes foi de `r TMI_2020`.
+
+```{r}
+# Demais medidas
+
+# 1) Taxa de mortalidade neonatal (entre 0 e 27 dias)
+
+obitos_neonatal <-
+  obitos_infantis_2019_2021 %>%
+  filter(Tempo_de_vida < 28) %>% # Seleciona o período conforme a taxa de interesse
+  count(Ano_obito) %>%
+  summarise(mean(n)) %>% 
+  pull()
+  
+TMI_neo_2020 <- obitos_neonatal / nascidos_vivos_2020 * 1000
+
+
+# 2) Taxa de mortalidade neonatal precoce (entre 0 e 6 dias)
+
+obitos_neonatal_precoce <-
+  obitos_infantis_2019_2021 %>%
+  filter(Tempo_de_vida < 7) %>%
+  count(Ano_obito) %>%
+  summarise(mean(n)) %>% 
+  pull()
+  
+TMI_neo_prec_2020 <- obitos_neonatal_precoce / nascidos_vivos_2020 * 1000
+
+
+# 3) Taxa de mortalidade neonatal tardia (entre 0 e 6 dias)
+
+obitos_neonatal_tardia <- 
+  obitos_infantis_2019_2021 %>%
+  filter(between(Tempo_de_vida, 7, 27)) %>%
+  count(Ano_obito) %>%
+  summarise(mean(n)) %>% 
+  pull()
+  
+TMI_neo_tardia_2020 <- obitos_neonatal_tardia / nascidos_vivos_2020 * 1000
+
+# 4) Taxa de mortalidade posneonatal (entre 0 e 27 dias)
+
+obitos_posneonatal <-
+  obitos_infantis_2019_2021 %>%
+  filter(Tempo_de_vida > 27) %>%
+  count(Ano_obito) %>%
+  summarise(mean(n)) %>% 
+  pull()
+  
+TMI_posneo_2020 <- obitos_posneonatal / nascidos_vivos_2020 * 1000
+
+
+```
+
+```{r}
+# Como não há dados para óbitos fetais nas tabelas que vêm do pacote Datasus,
+# usarei apenas os dados de 2021 para o cálculo
+
+obitos_fetais <- 
+dados_sim_2021 %>%
+  select(DTNASC, TIPOBITO, DTOBITO, "Sexo" = SEXO) %>%
+  filter(Sexo %in% c(1, 2),
+         TIPOBITO == 1) %>% # Código para filtrar apenas óbito fetal
+  count(TIPOBITO) %>% 
+  pull()
+
+TM_perinatal <- 
+ (obitos_neonatal_precoce + obitos_fetais) / (nascidos_vivos_2020 + obitos_fetais) * 1000 
+
+
+```
+
+Os dados para o Estado de Pernambuco são:
+
+```{r}
+tibble(Infantil = TMI_2020,
+       Neonatal = TMI_neo_2020,
+       "Neonatal precoce" = TMI_neo_prec_2020,
+       "Neonatal tardia"  = TMI_neo_tardia_2020,
+       Posneonatal = TMI_posneo_2020,
+       Perinatal = TM_perinatal) %>% 
+   kbl(
+    format    = "html",
+    caption   = "Taxas de mortalidade infantil por mil nascidos vivos", 
+    align     = "c", 
+    digits    = 3,
+    booktabs  = TRUE) %>%
+  footnote(
+    general  = "Dados de mortalidade infantil em média móvel entre 2019 e 2021 do SIM do Ministério da Saúde. Os dados populacionais são referentes às projeçoes do IGBE para o ano de 2020. Para a contabilidade da Taxa Perinatal, foram somados os dados de óbitos fetais aos dados de nascidos vivos.",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE
+  ) %>%
+  kable_styling("striped")
+```
+
+
