@@ -3,7 +3,7 @@ title: "TRABALHO 1 - Natalidade/Fecundidade e Mortalidade"
 subtitle: "Demografia 1.2022 - Professora Ana Maria Nogales"
 author: 
   - "Gabriel^[Matrícula:]"
-  - "João^[Matrícula:]"
+  - "João Victor Maia^[Matrícula: 221036824]"
   - "Marco Aurélio^[Matrícula:]"
   - "Rafael de Acypreste^[Matrícula: 200060023]"
 date: "`r format(Sys.Date(),'%d/%m/%Y')`"
@@ -204,13 +204,76 @@ dados_sim %>%
 
 
 
-## Questão 1
+## Questão 1: Diagrama de Lexis
 
 
-## Questão 2
+## Questão 2: Natalidade/Fecundidade 
+
+a) 
+
+Em primeiro lugar, pode-se acessar as projeções populacionais por sexo e idade. Os dados de projeção populacional do IBGE podem ser acessados em: 
+
+```{r}
+file <-
+  "https://ftp.ibge.gov.br/Projecao_da_Populacao/Projecao_da_Populacao_2018/projecoes_2018_populacao_2010_2060_20200406.xls"
+
+temp_pop <- tempfile()
 
 
-## Questão 3
+download.file(url      = file,
+              destfile =  temp_pop,
+              mode     = "wb")
+```
+
+
+
+Isso pode ser feito por
+
+```{r}
+faixas_etarias_IBGE <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "A7:A25",
+           col_names = FALSE) %>%
+  pull()
+
+faixas_etarias <- c("0-1", "2-4", faixas_etarias_IBGE[-1])
+
+
+pop_masc_2020 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "L7:L25",
+           col_names = "Pop_masc") %>%
+  pull()
+
+pop_fem_2020 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "L30:L48",
+           col_names = "Pop_fem") %>%
+  pull()
+
+pop_tot_2020 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "L53:L71",
+           col_names = "Pop_tot") %>%
+  pull()
+
+pop_sex_ida_2020 <-
+  tibble(
+    "Faixa_etaria"  = faixas_etarias_IBGE,
+    "Pop_masc_2020" = pop_masc_2020,
+    "Pop_fem_2020"  = pop_fem_2020,
+    "Pop_tot_2020"  = pop_tot_2020
+  )
+```
+
+
+
+
+## Questão 3: Mortalidade
 
 
 **a)** *Com base nos dados sobre óbitos do SIM para 2019 a 2021 e a população por sexo e idade estimada (projetada) em 2020 para a UF, obtenha os seguintes indicadores:*
@@ -239,23 +302,12 @@ obitos_total_2020 <-
 Já o dado de população pode ser consultado em 
 
 ```{r}
-file <-
-  "https://ftp.ibge.gov.br/Projecao_da_Populacao/Projecao_da_Populacao_2018/projecoes_2018_populacao_2010_2060_20200406.xls"
-
-temp_pop <- tempfile()
-
-
-download.file(url      = file,
-              destfile =  temp_pop,
-              mode     = "wb")
-
 pop_2020 <-
   read_xls(temp_pop,
            sheet = "PE",
            range = "L51:L52") %>%
   pull()
 
-round(obitos_total_2020/pop_2020 * 1000, digits = 4)
 ```
 
 
