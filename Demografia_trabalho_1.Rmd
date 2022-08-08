@@ -192,7 +192,7 @@ Com isso, tem-se as projeções populacionais por sexo e idade. Os dados de proj
 ```{r}
   # Repositório do IBGE para a tabela .xls
 file <-
-  "https://ftp.ibge.gov.br/Projecao_da_Populacao/Projecao_da_Populacao_2018/projecoes_2018_populacao_2010_2060_20200406.xls"
+  "https://ftp.ibge.gov.br/Projecao_da_Populacao/Projecao_da_Populacao_2018/projecoes_2018_populacao_idade_simples_2010_2060_20201209.xls"
 
   # Arquivo temporário para download da tabela
 temp_pop <- tempfile()
@@ -222,19 +222,43 @@ A partir da tabela de projeção, é possível acessar as projeções por sexo e
 faixas_etarias_IBGE <-
   read_xls(temp_pop,               # Arquivo temporário com a tabela de projeções
            sheet = "PE",           # Aba de Pernambuco
-           range = "A7:A25",       # Células com a informação de interesse
+           range = "A7:A96",       # Células com a informação de interesse
            col_names = FALSE) %>%  # Sem nomes das colunas 
   pull()                           # Extrai as informações como um vetor
 
+faixas_etarias_IBGE <- c(faixas_etarias_IBGE, 90) # 90 como última idade inicial
+
   # Subdicisão da primeira faixa etária divulgadas pelo IBGE
-faixas_etarias <- c("0-1", "2-4", faixas_etarias_IBGE[-1])
+faixas_etarias <-
+  c(
+    "< 1",
+    "1-4",
+    "5-9",
+    "10-14",
+    "15-19",
+    "20-24",
+    "25-29",
+    "30-34",
+    "35-39",
+    "40-44",
+    "45-49",
+    "50-54",
+    "55-59",
+    "60-64",
+    "65-69",
+    "70-74",
+    "75-79",
+    "80-84",
+    "85-89",
+    "90+"
+  )
 
 
   # Lenvantamento da população masculina
 pop_masc_2020 <-
   read_xls(temp_pop,
            sheet = "PE",
-           range = "L7:L25",
+           range = "L7:L97",
            col_names = "Pop_masc") %>%
   pull()
 
@@ -242,7 +266,7 @@ pop_masc_2020 <-
 pop_fem_2020 <-
   read_xls(temp_pop,
            sheet = "PE",
-           range = "L30:L48",
+           range = "L103:L193",
            col_names = "Pop_fem") %>%
   pull()
 
@@ -250,23 +274,40 @@ pop_fem_2020 <-
 pop_tot_2020 <-
   read_xls(temp_pop,
            sheet = "PE",
-           range = "L53:L71",
+           range = "L198:L288",
            col_names = "Pop_tot") %>%
   pull()
 
-  # Ajuste de toda a população
+  # Ajuste de toda a população em idades simples
 pop_sex_ida_2020 <-
   tibble(
-    "Faixa_etaria"  = faixas_etarias_IBGE,
+    "Idade_inicial" = faixas_etarias_IBGE,
     "Pop_masc_2020" = pop_masc_2020,
     "Pop_fem_2020"  = pop_fem_2020,
     "Pop_tot_2020"  = pop_tot_2020
   )
   
+  # Ajusta faixas etárias
+pop_sex_ida_2020 <- 
+  pop_sex_ida_2020 %>%
+  mutate(
+    Faixa_etaria = cut(      # Divisão das faixas etárias
+      Idade_inicial,         # Agrupa nas faixas
+      breaks         = c(0, 1, seq(from = 5, to = 90, by = 5), 120), # Períodos de quebra
+      right          = FALSE,
+      include.lowest = TRUE,
+      labels         = faixas_etarias                                # Nomes dos intervalos etários
+    )
+  ) %>%
+  select(Faixa_etaria, contains("2020")) %>% 
+  group_by(Faixa_etaria) %>%                     # Soma o total dentro das faixas etárias
+  summarise(Pop_masc_2020 = sum(Pop_masc_2020),
+            Pop_fem_2020  = sum(Pop_fem_2020),
+            Pop_tot_2020  = sum(Pop_tot_2020))
+  
   # Visualiza os dados no arquivo .html
 pop_sex_ida_2020
 ```
-
 
 
 
@@ -281,19 +322,30 @@ Em primeiro lugar, deve-se acessar os dados conforme a seção introdutória.
 
   Taxa Bruta de Mortalidade diz respeito ao total do número de óbitos, por mil habitantes, na população residente no local e período de interesse. No presente exercício, avaliamos a taxa no Estado de Pernambuco, com o período centrado no ano de 2020.
   
-O número de óbitos em 2020 é contabilizado por
+O número de óbitos em 2020 contabilizado a partir da média móvel entre 2019 e 2021 por
 
 ```{r}
-obitos_total_2020 <- 
+obitos_total_19_20 <- 
   dados_sim %>%
   select(DTOBITO, TIPOBITO) %>% # Seleciona as colunas de interesse
   filter(TIPOBITO == 2) %>%     # Seleciona óbitos não fetais
   mutate(# Transforma Data de óbito em .date
     DTOBITO = str_sub(DTOBITO,-4,-1)) %>% # Identifica o ano do óbito
   count(DTOBITO) %>%                      # Conta as linhas em cada ano
-  filter(DTOBITO == 2020) %>%             # Filtra apenas o ano 2020
+  filter(DTOBITO %in% c(2019, 2020)) %>%  # Filtra apenas o ano 2020
   pull(n)
+ 
+obitos_total_21 <-
+  dados_sim_2021 %>%
+  select(DTOBITO, TIPOBITO) %>% # Seleciona as colunas de interesse
+  filter(TIPOBITO == 2) %>%     # Seleciona óbitos não fetais
+  summarise(n = n()) %>%        # Conta as linhas do ano de 2021
+  pull(n) 
+  
 
+obitos_total_2020 <- mean(c(obitos_total_19_20, obitos_total_21))
+
+obitos_total_2020
 ```
 
 Já o dado de população pode ser consultado em 
@@ -303,7 +355,7 @@ Já o dado de população pode ser consultado em
 pop_2020 <-
   read_xls(temp_pop,
            sheet = "PE",
-           range = "L51:L52") %>% # Células com a informação
+           range = "L196:L197") %>% # Células com a informação
   pull()
 
 ```
