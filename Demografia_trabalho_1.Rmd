@@ -474,6 +474,7 @@ nMx_PE_2020 %>%
   theme(
     axis.title.y = element_text(angle = 0, size = 12, face = "bold"),
     axis.title.x = element_text(size = 12, face = "bold"),
+    axis.text.x  = element_text(angle = 20, vjust = .8, size = 11), 
     axis.ticks = element_line(color = "gray"),
     panel.grid.minor   = element_blank(),
     panel.grid.major.x = element_blank(),
@@ -639,12 +640,15 @@ TM_perinatal <-
 Os dados para o Estado de Pernambuco são:
 
 ```{r, out.width = '120%'}
+dados_mortalidade <- 
 tibble(Infantil = TMI_2020,
        Neonatal = TMI_neo_2020,
        "Neonatal precoce" = TMI_neo_prec_2020,
        "Neonatal tardia"  = TMI_neo_tardia_2020,
        Posneonatal = TMI_posneo_2020,
-       Perinatal = TM_perinatal) %>% 
+       Perinatal = TM_perinatal) 
+
+dados_mortalidade %>% 
    kbl(
     format    = "html",
     caption   = "Taxas de mortalidade infantil por mil nascidos vivos", 
@@ -698,12 +702,15 @@ unlink(tempd)
 Um resumo para o caso de Pernambuco pode ser visto em
 
 ```{r}
+dados_gbd_tabela <- 
 dados_gbd %>% 
   filter(sex == "Both") %>% 
   mutate(val = 1000 * val) %>% 
   select(age_group_name, val) %>% 
   pivot_wider(names_from  = age_group_name, 
-              values_from = val) %>% 
+              values_from = val)
+
+dados_gbd_tabela %>% 
   kbl(
     format    = "html",
     caption   = "Taxas de probabilidade de morte (por mil)", 
@@ -762,7 +769,7 @@ dados_ripsa <-
     values_to = "Taxas"
   ) %>%
   left_join(indicadores_ripsa) %>%
-  mutate(Indicador = str_remove(Indicador, " de mortalidade ")) %>%
+  #mutate(Indicador = str_remove(Indicador, "de mortalidade ")) %>%
   select(Indicador, Taxas) %>%
   pivot_wider(names_from  = Indicador,
               values_from = Taxas)
@@ -787,4 +794,71 @@ dados_ripsa %>%
 ```
 
 
-CONCLUIR COM BASE NOS SLIDES DA PROFESSORA A RESPEITO DAS METODOLOGIAS
+Com isso, pode-se avaliar os valores conjuntamentes como abaixo:
+
+```{r}
+dados_mortalidade <- 
+dados_mortalidade %>%
+  pivot_longer(cols = everything(),
+               names_to  = "Tipo",
+               values_to = "Valor") %>%
+  mutate(Fonte = "SIM-SINASC (Microdados)",
+         Ano = 2020)
+  
+
+dados_gbd_tabela <-
+  dados_gbd_tabela %>%
+  rename("Neonatal precoce" = `Early Neonatal`,
+         "Neonatal tardia"  = `Late Neonatal`) %>%
+  mutate(Fonte = "GBD",
+         Ano = 2019) %>%
+  pivot_longer(cols      = contains("Neonatal"),
+               names_to  = "Tipo",
+               values_to = "Valor") %>% 
+  select(Tipo, Valor, Fonte, Ano)
+
+dados_ripsa <- 
+dados_ripsa %>%
+  rename(
+    "Infantil"         = `Taxa de mortalidade infantil`,
+    "Neonatal precoce" = `Taxa de mortalidade infantil neonatal precoce`,
+    "Neonatal tardia"  = `Taxa de mortalidade infantil neonatal tardia`,
+    "Neonatal"         = `Taxa de mortalidade infantil neonatal`,
+    "Posneonatal"      = `Taxa de mortalidade infantil pós-neonatal`
+  ) %>%
+  pivot_longer(cols      = everything(),
+               names_to  = "Tipo",
+               values_to = "Valor") %>%
+  mutate(Fonte = "RIPSA",
+         Ano   = 2011,
+         Valor = parse_number(Valor)) 
+
+tabela_comparacao_mortalidade <-
+  dados_mortalidade %>%
+  bind_rows(dados_ripsa) %>%
+  bind_rows(dados_gbd_tabela) %>%
+  pivot_wider(names_from  = Tipo,
+              values_from = Valor)
+
+tabela_comparacao_mortalidade %>% 
+  kbl(
+    format    = "html",
+    caption   = "Comparação das Taxas de Mortalidade Infantil por mil", 
+    align     = "c", 
+    digits    = 3,
+    booktabs  = TRUE) %>%
+  footnote(
+    general  = "Fonte: Rede Interagencial de Informações para a Saúde.",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE
+  ) %>%
+  kable_styling("striped")
+
+```
+
+
+Pode-se perceber que os valores levantados no presente trabalho são menores do que os levantados nos boletins da RIPSA e do GBD. Em parte, esse fenômeno se deve a uma tendência constante de reduções das taxas de mortalidade infantil nos últimos períodos no país e também em Pernambuco, como se pode perceber [aqui](https://cidades.ibge.gov.br/brasil/pe/pesquisa/39/30279?ano=2017).
+
+Entretanto, parte dessa discrepância pode ser resultado de uma subnotificação dos dados de nascimento e de mortalidade infantil nos próprios SINASC e SIM. Como não foi feito ajuste no presente trabalho, há uma tendência de subestimação das referidas taxas. Já o GBD utiliza fontes de dados e metodologia própria de estimação das taxas, oferecendo até mesmo um intervalo de confiança para as estimações. Por outro lado, os dados do RIPSA, além de serem um pouco mais antigos, podem ter utilizado a metodologia indireta como explicitada acima.
+
+**d)** *Compare a estrutura de mortalidade por causas (Capítulos da CID10 - reagrupados em 6/7 grandes causas) segundo sexo de 2015 e 2021. Comente os resultados. Destacar a mortalidade por Covid-19 (CID B34.2).*
