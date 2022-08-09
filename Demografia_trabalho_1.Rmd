@@ -89,7 +89,7 @@ options(scipen = 99)
 
 Os microdados do SINASC de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus), criado por @. Os procedimentos de pré-processamento dos micradodos realizados podem ser encontrados em: https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SINASC. Os dados para o Estado de Pernambuco podem ser baixados por
 
-```{r}
+```{r, echo=TRUE}
   # Download dos microdados do datasus
 dados_sinasc <- fetch_datasus(
   year_start         = 2000,
@@ -104,7 +104,7 @@ dados_sinasc <- fetch_datasus(
 
 Para o ano de 2021, há apenas dados preliminares que podem ser tratados em:
 
-```{r}
+```{r, echo=TRUE, results='hide'}
   # Repositório Ministério da Saúde
 file <- "https://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sinasc/DN21OPEN.zip"
   
@@ -148,7 +148,7 @@ dados_sinasc %>%
 
 Os microdados do SIM de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus), criado por @. As convenções adotadas no SIM podem ser encontradas em https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SIM. Os dados para o Estado de Pernambuco podem ser baixados por
 
-```{r}
+```{r, echo=TRUE}
 dados_sim <- fetch_datasus(
   year_start         = 2000,
   year_end           = 2020,
@@ -162,7 +162,7 @@ dados_sim <- fetch_datasus(
 ### Dados preliminares de óbitos (2021)
 
 
-```{r}
+```{r, echo=TRUE, results='hide'}
 
   # Mesmo procedimento para os dados do SINASC
 file <- "https://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sim/DO21OPEN.zip"
@@ -396,10 +396,10 @@ dados_sim %>%
                                 "year"),                   # em anos
     Faixa_etaria = cut(                                    # A partir do tempo de vida
       Tempo_de_vida,                                       # divide em grupos
-      breaks         = c(0, seq(from = 5, to = 90, by = 5), 120), # Períodos de quebra
+      breaks         = c(0, 1, seq(from = 5, to = 90, by = 5), 120), # Períodos de quebra
       right          = FALSE,
       include.lowest = TRUE,
-      labels         = faixas_etarias_IBGE                 # Nomes dos intervalos etários
+      labels         = faixas_etarias                      # Nomes dos intervalos etários
     )
   )    %>% 
  drop_na() %>%   # Retuira casos com data de nascimento desconhecida
@@ -416,7 +416,7 @@ dados_sim %>%
 
 ```{r}
   # Agora, as duas tabelas podem ser juntadas para contabilizar as taxas específicas 
-nMx_PE_2020 <-
+nMx_PE_2020 <- 
   obitos_sex_ida_2020 %>%          
   left_join(pop_sex_ida_2020) %>% # Junta população à tabela de óbitos
   select(-Pop_tot_2020) %>% 
@@ -425,27 +425,7 @@ nMx_PE_2020 <-
     "nMx Fem"  = Obitos_fem / Pop_fem_2020,
     Faixa_etaria = factor(                   # Transforma em factor para plotar
       Faixa_etaria,
-      levels = c(
-        "0-4",
-        "5-9",
-        "10-14",
-        "15-19",
-        "20-24",
-        "25-29",
-        "30-34",
-        "35-39",
-        "40-44",
-        "45-49",
-        "50-54",
-        "55-59",
-        "60-64",
-        "65-69",
-        "70-74",
-        "75-79",
-        "80-84",
-        "85-89",
-        "90+"
-      )
+      levels = faixas_etarias
     )
   )
 
@@ -460,7 +440,7 @@ nMx_PE_2020 %>%
                   "População Feminina", "nMx \n Masculina",
                   "nMx Feminina")) %>%
   footnote(
-    general  = "Dados do SIM do Ministério da Saúde referentes ao ano de 2020.",
+    general  = "Dados do SIM do Ministério da Saúde referentes à média móvel de 3 anos centralizada 2020. Dados de projeções populacionais disponibilizados pelo IBGE.",
     footnote_as_chunk = TRUE,
     threeparttable    = TRUE
   ) %>%
@@ -507,7 +487,7 @@ nMx_PE_2020 %>%
 
 ```{r}
   # Cálculo da média de óbitos em 2019 e 2020 com procedimentos semelhantes já aplicados
-obitos_infantis_2019_2020 <-
+obitos_infantis_2019_2020 <- 
   dados_sim %>%
   select(DTNASC, TIPOBITO, DTOBITO, "Sexo" = SEXO) %>%
   mutate(
@@ -613,7 +593,7 @@ obitos_neonatal_precoce <-
 TMI_neo_prec_2020 <- obitos_neonatal_precoce / nascidos_vivos_2020 * 1000
 
 
-# 3) Taxa de mortalidade neonatal tardia (entre 0 e 6 dias)
+# 3) Taxa de mortalidade neonatal tardia (entre 7 a 27 dias)
 
 obitos_neonatal_tardia <- 
   obitos_infantis_2019_2021 %>%
@@ -658,7 +638,7 @@ TM_perinatal <-
 
 Os dados para o Estado de Pernambuco são:
 
-```{r}
+```{r, out.width = '120%'}
 tibble(Infantil = TMI_2020,
        Neonatal = TMI_neo_2020,
        "Neonatal precoce" = TMI_neo_prec_2020,
@@ -680,3 +660,131 @@ tibble(Infantil = TMI_2020,
 ```
 
 
+**c)** *Compare os seus resultados com os valores obtidos pelo estudo GBD, pela Nações Unidas (UN Population) e aqueles publicados no site do Datasus ([RIPSA - Indicadores e dados básicos](http://tabnet.datasus.gov.br/cgi/idb2012/matriz.htm)). Para a TMI, compare com os valores obtidos na questão 1. Comente sobre os aspectos metodológicos dessas duas formas de cálculo.*
+
+
+
+Os dados do [Global Burden of Disease 2019](https://ghdx.healthdata.org/gbd-2019) coleciona informações de pesquisas, censos e estatísticas vitais e sanitárias, permitindo a comparação entre países. As informações estão disponíveis no [Global Burden of Disease Study 2019 (GBD 2019) Data Resources](https://ghdx.healthdata.org/gbd-2019). 
+
+Trata-se de dados referentes à probabilidade de morte, que é definida pelo GBD^[Conforme *GBD 2019 Data and Tools Overview*, disponível em https://ghdx.healthdata.org/gbd-2019.] como a probabilidade de uma pessoa morrer entre dois intervalos de tempo se as taxas de mortalidade por qualquer causa num ano específico de interesse --- em nosso caso, o último ano, que é 2019 --- se mantiverem constante no futuro.
+
+```{r}
+  # Mesmo procedimento para os dados do SINASC
+file <- "https://ghdx.healthdata.org/sites/default/files/record-attached-files/IHME_GBD_2019_U5M_2010_2019_POD_0.zip"
+temp <- tempfile()
+tempd <- tempdir()
+
+utils::download.file(file, temp, mode = "wb")
+
+
+unzip(temp, exdir = tempd)
+
+
+dados_gbd <- 
+  read_csv(file.path(tempd, "IHME_GBD_2019_U5M_2010_2019_POD_Y2021M09D01.csv")) %>% # Importa a tabela .csv
+  filter(location_name  == "Pernambuco",
+         year_id        == 2019,                
+         age_group_name %in% c("Early Neonatal", # neonatal precoce
+                               "Neonatal",       # neonatal
+                               "Late Neonatal"   # neonatal tardia
+                               ),
+         metric_id      == 8) %>% # Probability of death
+  select(location_name, sex, age_group_name, val)
+
+file.remove(temp)
+unlink(tempd)
+```
+
+Um resumo para o caso de Pernambuco pode ser visto em
+
+```{r}
+dados_gbd %>% 
+  filter(sex == "Both") %>% 
+  mutate(val = 1000 * val) %>% 
+  select(age_group_name, val) %>% 
+  pivot_wider(names_from  = age_group_name, 
+              values_from = val) %>% 
+  kbl(
+    format    = "html",
+    caption   = "Taxas de probabilidade de morte (por mil)", 
+    align     = "c", 
+    digits    = 3,
+    booktabs  = TRUE) %>%
+  footnote(
+    general  = "Taxas de probabilidade de morte nas catetorias Neonatal, Neonatal Precoce (Early Neonatal) e Neonatal tardia (Late Neonatal). Fonte: Global Burden of Disease 2019. ",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE
+  ) %>%
+  kable_styling("striped")
+```
+
+
+Já os dados da Rede Interagencial de Informações para a Saúde (RIPSA)^[Há um alerta em seu sítio eletrônico de que a rede foi descontinuada.]. Os dados apresentados abaixo podem ter sido calculados de duas maneiras distintas^[Não há detalhes do efetivamente utilizados na tabela.]
+
+1) *Direto*: em que são contabilizados os óbitos no período etário considerado por mil nascidos vivos na população residente no espaço geográfico considerado.
+
+2) *Indireto*: estimativa por técnicas demográficas especiais, aplicado quando a ``os estados que apresentam cobertura do Sinasc inferior a 90% ou que não atingem o valor de 80% de um índice composto, especialmente criado, que combina a cobertura de óbitos infantis com a regularidade do SIM".
+
+Esses detalhes metodológicos dos indicadores estão explicados no documento [Indicadores Básicos para a Saúde no Brasil: Conceitos e aplicações](http://tabnet.datasus.gov.br/tabdata/livroidb/2ed/indicadores.pdf).
+
+```{r}
+
+  # Repositório do IBGE para a tabela .xls
+file <- "http://tabnet.datasus.gov.br/cgi/idb2012/Grupo_C.xlsx"
+
+
+  # Arquivo temporário para download da tabela
+temp_ripsa <- tempfile()
+
+  # Download da tabela em formato compatível com Windows
+download.file(url      = file,
+              destfile = temp_ripsa,
+              mode     = "wb")
+
+indicadores_ripsa <-
+  read_xlsx(
+    temp_ripsa,
+    sheet = "Indicadores",
+    range = "A1:B5",
+    col_names = c("Codigo_indicador",
+                  "Indicador")
+  ) 
+
+dados_ripsa <-
+  read_xlsx(temp_ripsa,
+            sheet = "Região e UF") %>%
+  rename("Regiao" = `...1`) %>%
+  filter(Regiao == "Pernambuco") %>%
+  select(Regiao, all_of(indicadores_ripsa$Codigo_indicador)) %>%
+  pivot_longer(
+    cols      = all_of(indicadores_ripsa$Codigo_indicador),
+    names_to  = "Codigo_indicador",
+    values_to = "Taxas"
+  ) %>%
+  left_join(indicadores_ripsa) %>%
+  mutate(Indicador = str_remove(Indicador, " de mortalidade ")) %>%
+  select(Indicador, Taxas) %>%
+  pivot_wider(names_from  = Indicador,
+              values_from = Taxas)
+
+
+dados_ripsa %>% 
+    kbl(
+    format    = "html",
+    caption   = "Taxas de Mortalidade Infantil por mil (2011)", 
+    align     = "c", 
+    digits    = 3,
+    booktabs  = TRUE) %>%
+  footnote(
+    general  = "Taxas de mortalidade infantil (2011). Fonte: Rede Interagencial de Informações para a Saúde.",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE
+  ) %>%
+  kable_styling("striped")
+
+
+
+```
+
+
+CONCLUIR COM BASE NOS SLIDES DA PROFESSORA A RESPEITO DAS METODOLOGIAS
