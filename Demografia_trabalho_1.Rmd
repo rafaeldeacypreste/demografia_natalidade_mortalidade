@@ -74,7 +74,9 @@ pacman::p_load("microdatasus", ## Download dos dados de 2000 a 2020
                "tidyverse",    ## Pacote de utilidades para manipulação e visualização
                "kableExtra",   ## Elaboração das tabelas em LaTeX e html
                "lubridate",
-               "readxl")
+               "readxl",
+               "LexisPlotR")
+
 
 options(scipen = 99)
 ```
@@ -208,6 +210,250 @@ download.file(url      = file,
 
 
 ## Questão 1: Diagrama de Lexis
+
+
+a) Construir o Diagrama de Lexis para os dados de nascidos vivos de 2000 a 2021 da UF escolhida (SINASC) e de óbitos menores de 5 anos (idades simples) para o mesmo período segundo ano de nascimento.
+
+```{r}
+obitos_menos_5_anos <- 
+dados_sim %>%
+  select(DTNASC, DTOBITO) %>%
+  mutate(                              # Transforma Data de nascimento em .date
+    DTNASC = as.character(DTNASC),
+    DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
+                       TRUE                    ~ DTNASC),
+    DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
+  ) %>%
+  mutate(                              # Transforma Data de óbito em .date
+    DTOBITO = as.character(DTOBITO),
+    DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
+                        TRUE                     ~ DTOBITO),
+    DTOBITO = parse_date(as.character(DTOBITO), format = "%d%m%Y")
+  ) %>%
+  mutate(Tempo_de_vida = time_length(interval(DTNASC, DTOBITO),
+                                     "year")) %>%   # Calula idade de óbito
+  filter(DTNASC >= as.Date("1996-01-01"),           # Max 5 anos no período de análise
+         Tempo_de_vida < 5) %>%                     # Seleciona menores de 5 anos
+  count(year(DTOBITO), name = "Obito_menos_5_anos") %>%  
+  rename(Ano_obito = `year(DTOBITO)`)
+
+
+obitos_menos_5_anos_21 <- 
+dados_sim_2021 %>%
+  select(DTNASC, DTOBITO) %>%
+  mutate(
+    # Transforma Data de nascimento em .date
+    DTNASC = as.character(DTNASC),
+    DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
+                       TRUE                    ~ DTNASC),
+    DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
+  ) %>%
+  mutate(
+    # Transforma Data de óbito em .date
+    DTOBITO = as.character(DTOBITO),
+    DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
+                        TRUE                     ~ DTOBITO),
+    DTOBITO = parse_date(as.character(DTOBITO), format = "%d%m%Y")
+  ) %>%
+  mutate(Tempo_de_vida = time_length(interval(DTNASC, DTOBITO),
+                                     "year")) %>%   # Calula idade de óbito
+  filter(DTNASC >= as.Date("1996-01-01"),           # Max 5 anos no período de análise
+         Tempo_de_vida < 5) %>%                     # Seleciona menores de 5 anos
+  count(year(DTOBITO), name = "Obito_menos_5_anos") %>%
+  rename(Ano_obito = `year(DTOBITO)`)
+
+obitos_menos_5 <- 
+  obitos_menos_5_anos %>% 
+  bind_rows(obitos_menos_5_anos_21) %>% 
+  mutate(Idade = 2.5)
+```
+
+
+```{r}
+nascidos_vivos_ate_2020 <- 
+dados_sinasc %>%
+  select(DTNASC) %>% # Seleciona as colunas de interesse
+  mutate(# Transforma Data de óbito em .date
+    DTNASC = str_sub(DTNASC,-4,-1)) %>% # Identifica o ano do óbito
+  count(DTNASC) %>%                      # Conta as linhas em cada ano
+  rename("Nascidos_vivos" = n) %>% 
+  mutate(DTNASC = parse_number(DTNASC))
+
+
+nascidos_vivos_2021 <- 
+  dados_sinasc_2021 %>%
+  summarise("Nascidos_vivos" = n()) %>%
+  mutate(DTNASC = 2021) %>% 
+  select(DTNASC, Nascidos_vivos)
+    
+nascidos_vivos_ate_2021 <- 
+nascidos_vivos_ate_2020 %>% 
+  bind_rows(nascidos_vivos_2021)
+
+```
+
+O Diagrama de Lexis solicitado é: 
+
+
+```{r, out.width = '120%'}
+
+lexis_grid(
+  year_start = 2000,
+  year_end   = 2021,
+  age_start  = 0,
+  age_end    = 5
+) +
+  annotate(
+    geom = "text",
+    x = as.Date(paste0(obitos_menos_5$Ano_obito
+                       , "-08-07"))
+    ,
+    y = obitos_menos_5$Idade,
+    label    = c(obitos_menos_5$Obito_menos_5_anos),
+    size     = 3,
+    color    = "black",
+    fontface = "bold"
+  ) +
+  annotate(
+    geom = "text",
+    x = as.Date(paste0(nascidos_vivos_ate_2021$DTNASC, "-08-10")),
+    y = 0.15,
+    label = nascidos_vivos_ate_2021$Nascidos_vivos,
+    size = 2,
+    color = "red",
+    fontface = "bold"
+  ) +
+  # annotate(
+  #   geom = "text",
+  #   x = as.Date(paste0(tabela$ano_obt[tabela$TRI == 0]
+  #                      , "-10-01"))
+  #   ,
+  #   y = tabela$idade_certa[tabela$TRI == 0] + 0.4,
+  #   label = c(tabela$n[tabela$TRI == 0]),
+  #   size = 4,
+  #   color = "black",
+  #   fontface = "bold"
+  # ) +
+  labs(
+    title = "Diagrama de Lexis",
+    subtitle = "- Óbitos com menos de 5 anos (preto) e nascidos vivos de 2000 a 2021 (vermelho), Pernambuco",
+    caption = "Fonte: DATASUS, 2000-2021",
+    x = 'Ano',
+    y = 'Idade'
+  )
+```
+
+
+b) Supondo população fechada (inexistência de migração), calcule a probabilidade de um recém-nascido na UF ou território de escolha sobreviver à idade exata 5 para as coortes de 2000 a 2016.
+
+A probabilidade de um recém-nascido sobreviver aos 5 anos em Pernambuco é de 
+
+```{r}
+nascidos_vivos_ate_2021 %>% 
+  left_join(obitos_menos_5, by = c("DTNASC" = "Ano_obito")) %>% 
+  mutate("Probabilidade de sobrevivência" = 1 - (Obito_menos_5_anos / Nascidos_vivos)) %>% 
+  filter(DTNASC < 2017) %>% 
+  select("Ano de Nascimento" = DTNASC, `Probabilidade de sobrevivência`) %>% 
+kbl(
+    format    = "html",
+    align     = "c", 
+    digits    = 5,
+    booktabs  = TRUE,
+    caption   = "Probabilidade de um recém-nascido em Pernambuco sobreviver à idade exata 5 anos") %>%
+  footnote(
+    general  = "Dados do SIM do Ministério da Saúde referentes aos óbitos e dados do SINASC referentes aos nascimentos.",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE
+  ) %>%
+  kable_styling("striped")
+  
+
+```
+
+
+
+c) Considerando o mesmo pressuposto, calcule a probabilidade de sobreviver ao primeiro aniversário dos recém-nascidos no período de 2000 a 2020.
+
+```{r}
+obitos_menos_1_ano <- 
+dados_sim %>%
+  select(DTNASC, DTOBITO) %>%
+  mutate(                              # Transforma Data de nascimento em .date
+    DTNASC = as.character(DTNASC),
+    DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
+                       TRUE                    ~ DTNASC),
+    DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
+  ) %>%
+  mutate(                              # Transforma Data de óbito em .date
+    DTOBITO = as.character(DTOBITO),
+    DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
+                        TRUE                     ~ DTOBITO),
+    DTOBITO = parse_date(as.character(DTOBITO), format = "%d%m%Y")
+  ) %>%
+  mutate(Tempo_de_vida = time_length(interval(DTNASC, DTOBITO),
+                                     "year")) %>%   # Calula idade de óbito
+  filter(DTNASC >= as.Date("1999-01-01"),           # Max 5 anos no período de análise
+         Tempo_de_vida < 1) %>%                     # Seleciona menores de 5 anos
+  count(year(DTOBITO), name = "Obito_menos_1_ano") %>%  
+  rename(Ano_obito = `year(DTOBITO)`)
+
+
+obitos_menos_1_ano_21 <- 
+dados_sim_2021 %>%
+  select(DTNASC, DTOBITO) %>%
+  mutate(
+    # Transforma Data de nascimento em .date
+    DTNASC = as.character(DTNASC),
+    DTNASC = case_when(str_length(DTNASC) == 7 ~ str_c(0, DTNASC),
+                       TRUE                    ~ DTNASC),
+    DTNASC = parse_date(as.character(DTNASC), format = "%d%m%Y")
+  ) %>%
+  mutate(
+    # Transforma Data de óbito em .date
+    DTOBITO = as.character(DTOBITO),
+    DTOBITO = case_when(str_length(DTOBITO) == 7 ~ str_c(0, DTOBITO),
+                        TRUE                     ~ DTOBITO),
+    DTOBITO = parse_date(as.character(DTOBITO), format = "%d%m%Y")
+  ) %>%
+  mutate(Tempo_de_vida = time_length(interval(DTNASC, DTOBITO),
+                                     "year")) %>%   # Calula idade de óbito
+  filter(DTNASC >= as.Date("1999-01-01"),           # Max 5 anos no período de análise
+         Tempo_de_vida < 1) %>%                     # Seleciona menores de 5 anos
+  count(year(DTOBITO), name = "Obito_menos_1_ano") %>%
+  rename(Ano_obito = `year(DTOBITO)`)
+
+obitos_menos_1 <- 
+  obitos_menos_1_ano %>% 
+  bind_rows(obitos_menos_1_ano_21)
+```
+
+
+A probabilidade de um recém-nascido sobreviver ao primeiro aniversário em Pernambuco é de 
+
+```{r}
+nascidos_vivos_ate_2021 %>% 
+  left_join(obitos_menos_1, by = c("DTNASC" = "Ano_obito")) %>% 
+  mutate("Probabilidade de sobrevivência" = 1 - (Obito_menos_1_ano / Nascidos_vivos)) %>% 
+  filter(DTNASC < 2021) %>% 
+  select("Ano de Nascimento" = DTNASC, `Probabilidade de sobrevivência`) %>% 
+kbl(
+    format    = "html",
+    align     = "c", 
+    digits    = 5,
+    booktabs  = TRUE,
+    caption   = "Probabilidade de um recém-nascido em Pernambuco sobreviver ao primeiro aniversário") %>%
+  footnote(
+    general  = "Dados do SIM do Ministério da Saúde referentes aos óbitos e dados do SINASC referentes aos nascimentos.",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE
+  ) %>%
+  kable_styling("striped")
+  
+```
+
+
+d) Comente sobre os valores encontrados. Não esquecer a qualidade da informação trabalhada.
+
 
 
 ## Questão 2: Natalidade/Fecundidade 
