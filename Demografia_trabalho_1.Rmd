@@ -4,7 +4,7 @@ subtitle: "Demografia 1.2022 - Professora Ana Maria Nogales"
 author: 
   - "Gabriel^[Matrícula:]"
   - "João Victor Maia^[Matrícula: 221036824]"
-  - "Marco Aurélio^[Matrícula:]"
+  - "Marco Aurélio^[Matrícula: 160135702]"
   - "Rafael de Acypreste^[Matrícula: 200060023]"
 date: "`r format(Sys.Date(),'%d/%m/%Y')`"
 output:
@@ -306,7 +306,7 @@ lexis_grid(
   annotate(
     geom = "text",
     x = as.Date(paste0(obitos_menos_5$Ano_obito
-                       , "-08-07"))
+                       , "-06-22"))
     ,
     y = obitos_menos_5$Idade,
     label    = c(obitos_menos_5$Obito_menos_5_anos),
@@ -337,7 +337,7 @@ lexis_grid(
   labs(
     title = "Diagrama de Lexis",
     subtitle = "- Óbitos com menos de 5 anos (preto) e nascidos vivos de 2000 a 2021 (vermelho), Pernambuco",
-    caption = "Fonte: DATASUS, 2000-2021",
+    caption = "Fonte: Dados de óbitos do SIM e dados de nascimento do SINASC (Ministério da Saúde) para os anos de 2000 a 2021",
     x = 'Ano',
     y = 'Idade'
   )
@@ -362,6 +362,7 @@ kbl(
     caption   = "Probabilidade de um recém-nascido em Pernambuco sobreviver à idade exata 5 anos") %>%
   footnote(
     general  = "Dados do SIM do Ministério da Saúde referentes aos óbitos e dados do SINASC referentes aos nascimentos.",
+    general_title = " ",
     footnote_as_chunk = TRUE,
     threeparttable    = TRUE
   ) %>%
@@ -444,6 +445,7 @@ kbl(
     caption   = "Probabilidade de um recém-nascido em Pernambuco sobreviver ao primeiro aniversário") %>%
   footnote(
     general  = "Dados do SIM do Ministério da Saúde referentes aos óbitos e dados do SINASC referentes aos nascimentos.",
+    general_title = " ",
     footnote_as_chunk = TRUE,
     threeparttable    = TRUE
   ) %>%
@@ -568,7 +570,7 @@ Em primeiro lugar, deve-se acessar os dados conforme a seção introdutória.
 
   Taxa Bruta de Mortalidade diz respeito ao total do número de óbitos, por mil habitantes, na população residente no local e período de interesse. No presente exercício, avaliamos a taxa no Estado de Pernambuco, com o período centrado no ano de 2020.
   
-O número de óbitos em 2020 contabilizado a partir da média móvel entre 2019 e 2021 por
+O número de óbitos em 2020 contabilizado a partir da média móvel entre 2019 e 2021.
 
 ```{r}
 obitos_total_19_20 <- 
@@ -590,11 +592,8 @@ obitos_total_21 <-
   
 
 obitos_total_2020 <- mean(c(obitos_total_19_20, obitos_total_21))
-
-obitos_total_2020
 ```
 
-Já o dado de população pode ser consultado em 
 
 ```{r}
   # Identifica o valor da população total em 2020
@@ -607,13 +606,13 @@ pop_2020 <-
 ```
 
 
-Portando, a Taxa Bruta de Mortalidade por mil habitantes para o Estado de Pernambuco em 2020 foi `r round(obitos_total_2020 / pop_2020 * 1000, digits = 4)`.
+Portanto, a Taxa Bruta de Mortalidade para o Estado de Pernambuco em 2020 foi `r round(obitos_total_2020 / pop_2020 * 1000, digits = 4)` por mil habitantes.
 
 >- Taxas específicas de mortalidade por sexo e idade - nMx (grafique)
 
 As projeções populacionais por sexo e idade já foram coletadas na questão 2 e serão aproveitadas nesta.
 
-Em seguida, pode-se contabilizar o número de óbitos por faixa etária no ano de 2020:
+Em seguida, pode-se contabilizar o número de óbitos por faixa etária no ano de 2020, bem como contabilizar as taxas específicas de mortalidade por sexo e idade (nMx):
 
 ```{r}
 
@@ -693,7 +692,7 @@ nMx_PE_2020 %>%
   kable_styling("striped")
 ```
 
-cujo gráfico pode ser visualizado em 
+O gráfico das taxas pode ser visualizado abaixo. Atente-se para o eixo vertical, que está em escala logarítmica de base 10.
 
 ```{r}
   # Gráfico das nMx
@@ -811,7 +810,7 @@ dados_sinasc %>%
 TMI_2020 <- media_obitos_menos_1ano_2019_2021 / nascidos_vivos_2020 * 1000
 ```     
 
-A Taxa de Mortalidade Infantil com média móvel de mortes centrada em 2020 pelo número de nascimentos em 2020 por mil habitantes foi de `r TMI_2020`.
+A Taxa de Mortalidade Infantil com média móvel de mortes centrada em 2020 pelo número de nascimentos em 2020 por mil habitantes foi de `r round(TMI_2020, digits = 4)`.
 
 ```{r}
 # Demais medidas
@@ -903,6 +902,7 @@ dados_mortalidade %>%
     booktabs  = TRUE) %>%
   footnote(
     general  = "Dados de mortalidade infantil em média móvel entre 2019 e 2021 do SIM do Ministério da Saúde. Os dados populacionais são referentes às projeçoes do IGBE para o ano de 2020. Para a contabilidade da Taxa Perinatal, foram somados os dados de óbitos fetais aos dados de nascidos vivos.",
+    general_title = " ",
     footnote_as_chunk = TRUE,
     threeparttable    = TRUE
   ) %>%
@@ -918,7 +918,7 @@ Os dados do [Global Burden of Disease 2019](https://ghdx.healthdata.org/gbd-2019
 
 Trata-se de dados referentes à probabilidade de morte, que é definida pelo GBD^[Conforme *GBD 2019 Data and Tools Overview*, disponível em https://ghdx.healthdata.org/gbd-2019.] como a probabilidade de uma pessoa morrer entre dois intervalos de tempo se as taxas de mortalidade por qualquer causa num ano específico de interesse --- em nosso caso, o último ano, que é 2019 --- se mantiverem constante no futuro.
 
-```{r}
+```{r, results='hide'}
   # Mesmo procedimento para os dados do SINASC
 file <- "https://ghdx.healthdata.org/sites/default/files/record-attached-files/IHME_GBD_2019_U5M_2010_2019_POD_0.zip"
 temp <- tempfile()
@@ -965,6 +965,7 @@ dados_gbd_tabela %>%
     booktabs  = TRUE) %>%
   footnote(
     general  = "Taxas de probabilidade de morte nas catetorias Neonatal, Neonatal Precoce (Early Neonatal) e Neonatal tardia (Late Neonatal). Fonte: Global Burden of Disease 2019. ",
+    general_title = " ",
     footnote_as_chunk = TRUE,
     threeparttable    = TRUE
   ) %>%
@@ -976,7 +977,7 @@ Já os dados da Rede Interagencial de Informações para a Saúde (RIPSA)^[Há u
 
 1) *Direto*: em que são contabilizados os óbitos no período etário considerado por mil nascidos vivos na população residente no espaço geográfico considerado.
 
-2) *Indireto*: estimativa por técnicas demográficas especiais, aplicado quando a ``os estados que apresentam cobertura do Sinasc inferior a 90% ou que não atingem o valor de 80% de um índice composto, especialmente criado, que combina a cobertura de óbitos infantis com a regularidade do SIM".
+2) *Indireto*: estimativa por técnicas demográficas especiais, aplicado quando os estados que apresentam cobertura do Sinasc inferior a 90% ou que não atingem o valor de 80% de um índice composto, especialmente criado, que combina a cobertura de óbitos infantis com a regularidade do SIM".
 
 Esses detalhes metodológicos dos indicadores estão explicados no documento [Indicadores Básicos para a Saúde no Brasil: Conceitos e aplicações](http://tabnet.datasus.gov.br/tabdata/livroidb/2ed/indicadores.pdf).
 
@@ -1030,6 +1031,7 @@ dados_ripsa %>%
     booktabs  = TRUE) %>%
   footnote(
     general  = "Taxas de mortalidade infantil (2011). Fonte: Rede Interagencial de Informações para a Saúde.",
+    general_title = " ",
     footnote_as_chunk = TRUE,
     threeparttable    = TRUE
   ) %>%
@@ -1095,6 +1097,7 @@ tabela_comparacao_mortalidade %>%
     booktabs  = TRUE) %>%
   footnote(
     general  = "Fonte: Rede Interagencial de Informações para a Saúde.",
+    general_title = " ",
     footnote_as_chunk = TRUE,
     threeparttable    = TRUE
   ) %>%
@@ -1108,3 +1111,131 @@ Pode-se perceber que os valores levantados no presente trabalho são menores do 
 Entretanto, parte dessa discrepância pode ser resultado de uma subnotificação dos dados de nascimento e de mortalidade infantil nos próprios SINASC e SIM. Como não foi feito ajuste no presente trabalho, há uma tendência de subestimação das referidas taxas. Já o GBD utiliza fontes de dados e metodologia própria de estimação das taxas, oferecendo até mesmo um intervalo de confiança para as estimações. Por outro lado, os dados do RIPSA, além de serem um pouco mais antigos, podem ter utilizado a metodologia indireta como explicitada acima.
 
 **d)** *Compare a estrutura de mortalidade por causas (Capítulos da CID10 - reagrupados em 6/7 grandes causas) segundo sexo de 2015 e 2021. Comente os resultados. Destacar a mortalidade por Covid-19 (CID B34.2).*
+
+
+```{r}
+#load("Dados.RData")
+
+dados <- bind_rows(dados_sim     [ , c('SEXO', 'DTOBITO','CAUSABAS') ],
+                   dados_sim_2021[ , c('SEXO', 'DTOBITO','CAUSABAS') ]) %>%
+          filter(SEXO %in% c('1','2')) %>%
+          mutate(flag_covid = CAUSABAS == 'B342')
+
+#1 - masc
+#2 - fem
+
+CAUSABAS = as.character(dados$CAUSABAS)
+
+G7 =  (CAUSABAS >='D50'& CAUSABAS <= 'D89') |
+      (CAUSABAS >='E00'& CAUSABAS <= 'E90') |
+      (CAUSABAS >='F00'& CAUSABAS <= 'F99') |
+      (CAUSABAS >='G00'& CAUSABAS <= 'G99') |
+      (CAUSABAS >='H00'& CAUSABAS <= 'H59') |
+      (CAUSABAS >='H60'& CAUSABAS <= 'H95') |
+      (CAUSABAS >='K00'& CAUSABAS <= 'K93') |
+      (CAUSABAS >='L00'& CAUSABAS <= 'L99') |
+      (CAUSABAS >='M00'& CAUSABAS <= 'M99') |
+      (CAUSABAS >='N00'& CAUSABAS <= 'N99') |
+      (CAUSABAS >='O00'& CAUSABAS <= 'O99') |
+      (CAUSABAS >='Q00'& CAUSABAS <= 'Q99') 
+  
+dados_aux1 <- 
+dados %>%
+  select(SEXO, DTOBITO, CAUSABAS, flag_covid) %>%
+  mutate(
+    DTOBITO = str_sub(DTOBITO, -4, -1),
+    CAUSABAS = as.character(str_sub(CAUSABAS, 1, 3)),
+    GC = ifelse(
+      CAUSABAS >= 'A00' &
+        CAUSABAS <= 'B99',
+      "Doenças infecciosas e parasitárias",
+      ifelse(
+        CAUSABAS >= 'C00' & CAUSABAS <= 'D48',
+        "Neoplasias",
+        ifelse(
+          CAUSABAS >= 'I00' &
+            CAUSABAS <= 'I99',
+          "Doenças do aparelho circulatório",
+          ifelse(
+            CAUSABAS >= 'J00' &
+              CAUSABAS <= 'J99',
+            "Doenças do aparelho respiratório",
+            ifelse(
+              CAUSABAS >= 'P00' &
+                CAUSABAS <= 'P96',
+              "Algumas afecções originadas no período perinatal",
+              ifelse(
+                CAUSABAS >= 'V01' & CAUSABAS <= 'Y98',
+                "Causas externas",
+                ifelse(G7, "Demais causas definidas", "Outros")
+              )
+            )
+          )
+        )
+      )
+    ),
+    
+    GC = ifelse(flag_covid, 'Covid-19', GC)
+  ) %>%
+  filter(DTOBITO %in% c("2015", "2021") , GC != "Outros")
+       
+              
+dados_aux2 <- dados_aux1 %>% 
+              group_by(DTOBITO, SEXO, GC) %>%
+              summarise (mg = n())
+
+
+dados_aux3 <- data.frame(
+              DTOBITO = c('2015', '2021', '2015', '2021'), 
+              SEXO = c('1', '1', '2', '2'),
+              POPPROJ = c(4476794, 4643766, 4840950, 5031483)
+              )
+
+dados_aux4 <- left_join(dados_aux2, dados_aux3, 
+                        by=c("SEXO", "DTOBITO")) %>%
+              mutate(TM = mg / POPPROJ * 1000) %>%
+              arrange(GC,  SEXO, DTOBITO) %>%
+              rename(Ano = DTOBITO,
+                     Sexo = SEXO, 
+                     `Causas` = GC,
+                     Óbitos = mg, 
+                     `População Projetada` = POPPROJ, 
+                     `Taxa de Mortalidade` = TM) %>%
+              relocate( Causas, Ano, Sexo, Óbitos, 
+                        `População Projetada`, `Taxa de Mortalidade`)
+
+
+
+dados_aux5 <- select(dados_aux4, Causas, `Taxa de Mortalidade`, Sexo, Ano) %>%
+              pivot_wider(values_from = `Taxa de Mortalidade`, 
+                          names_from = c(`Sexo`,`Ano`) ,
+                          values_fill = 0) %>%
+              relocate(Causas,`1_2015`, `2_2015`,
+                 `1_2021`, `2_2021`)
+
+
+dados_aux5 %>% filter(Causas != "Covid-19") %>%
+    kbl(
+    col.names = c('Causas','2015 \n Homens', '2015 \n Mulheres', '2021 \n Homens', '2021 \n Mulheres'),
+    format    = "html",
+    caption   = "Comparação das Estruturas de Mortalidade por Grupos de Causas, segundo o sexo, entre os anos de 2015 e 2021", 
+    align     = "c", 
+    digits    = 3,
+    booktabs  = TRUE) %>%
+    footnote(
+    general_title = " ",
+    general  = "Fonte: Dados do SIM do Ministério da Saúde referentes aos óbitos.",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE  ) %>%
+    kable_styling("striped")
+
+
+```
+
+
+
+
+
+
+
+
