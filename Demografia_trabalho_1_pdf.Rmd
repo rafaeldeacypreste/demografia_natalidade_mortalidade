@@ -2,10 +2,10 @@
 title: "TRABALHO 1 - Natalidade/Fecundidade e Mortalidade"
 subtitle: "Demografia 1.2022 - Professora Ana Maria Nogales"
 author: 
-  - "Gabriel Peixoto Veiga^[Matrícula: 180016946]"
-  - "João Victor Maia^[Matrícula: 221036824]"
-  - "Marco Aurélio^[Matrícula: 160135702]"
-  - "Rafael de Acypreste^[Matrícula: 200060023]"
+  - "Gabriel Peixoto Veiga"
+  - "João Victor Maia"
+  - "Marco Aurélio"
+  - "Rafael de Acypreste"
 date: "`r format(Sys.Date(),'%d/%m/%Y')`"
 output:
   bookdown::pdf_document2:  
@@ -32,9 +32,6 @@ header-includes:
   - \usepackage{float}
   - \setlength{\parindent}{4em}
   - \setlength{\parskip}{1.5em}
-  - \usepackage{titling}
-  - \pretitle{\begin{center}
-  - \posttitle{\end{center}}
 editor_options: 
   chunk_output_type: console
 ---
@@ -92,7 +89,7 @@ options(scipen = 99)
 
 Os microdados do SINASC de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus), criado por @. Os procedimentos de pré-processamento dos micradodos realizados podem ser encontrados em: https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SINASC. Os dados para o Estado de Pernambuco podem ser baixados por
 
-```{r,  echo=TRUE}
+```{r, eval=FALSE, echo=TRUE}
   # Download dos microdados do datasus
 dados_sinasc <- fetch_datasus(
   year_start         = 2000,
@@ -103,11 +100,15 @@ dados_sinasc <- fetch_datasus(
 ```
 
 
+```{r}
+dados_sinasc <- fread("C:/Users/rafae/OneDrive/Documentos/Estatistica/Demografia/Atividades/Trabalho1/dados_sinasc.csv", encoding = "UTF-8")
+```
+
 ### Dados preliminares 2021
 
 Para o ano de 2021, há apenas dados preliminares que podem ser tratados em:
 
-```{r, echo=TRUE, results='hide'}
+```{r, eval=FALSE, echo=TRUE, results='hide'}
   # Repositório Ministério da Saúde
 file <- "https://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sinasc/DN21OPEN.zip"
   
@@ -133,11 +134,15 @@ file.remove(temp)
 unlink(tempd)
 ```
 
+```{r}
+dados_sinasc_2021 <- fread("C:/Users/rafae/OneDrive/Documentos/Estatistica/Demografia/Atividades/Trabalho1/dados_sim_2021.csv", encoding = "UTF-8")
+```
+
 ### Dados de Nascidos Vivos a partir do SIM
 
 Os microdados do SIM de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus), criado por @. As convenções adotadas no SIM podem ser encontradas em https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SIM. Os dados para o Estado de Pernambuco podem ser baixados por
 
-```{r, echo=TRUE}
+```{r, eval=FALSE, echo=TRUE}
 dados_sim <- fetch_datasus(
   year_start         = 2000,
   year_end           = 2020,
@@ -146,11 +151,14 @@ dados_sim <- fetch_datasus(
 )
 ```
 
+```{r}
+dados_sim <- fread("C:/Users/rafae/OneDrive/Documentos/Estatistica/Demografia/Atividades/Trabalho1/dados_sim.csv", encoding = "UTF-8")
+```
 
 ### Dados preliminares de óbitos (2021)
 
 
-```{r,  echo=TRUE, results='hide'}
+```{r,  eval=FALSE, echo=TRUE, results='hide'}
 
   # Mesmo procedimento para os dados do SINASC
 file <- "https://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sim/DO21OPEN.zip"
@@ -170,6 +178,10 @@ dados_sim_2021 <-
 
 file.remove(temp)
 unlink(tempd)
+```
+
+```{r}
+dados_sim_2021 <- fread("C:/Users/rafae/OneDrive/Documentos/Estatistica/Demografia/Atividades/Trabalho1/dados_sim_2021.csv", encoding = "UTF-8")
 ```
 
 
@@ -340,7 +352,7 @@ nascidos_vivos_ate_2021 %>%
   filter(DTNASC < 2017) %>% 
   select("Ano de Nascimento" = DTNASC, `Probabilidade de sobrevivência`) %>% 
 kbl(
-    format    = "html",
+    format    = "latex",
     align     = "c", 
     digits    = 5,
     booktabs  = TRUE,
@@ -423,7 +435,7 @@ nascidos_vivos_ate_2021 %>%
   filter(DTNASC < 2021) %>% 
   select("Ano de Nascimento" = DTNASC, `Probabilidade de sobrevivência`) %>% 
 kbl(
-    format    = "html",
+    format    = "latex",
     align     = "c", 
     digits    = 5,
     booktabs  = TRUE,
@@ -864,7 +876,7 @@ nMx_PE_2020 <-
 
 nMx_PE_2020 %>%
   kbl(
-    format    = "html",
+    format    = "latex",
     align     = "c", 
     digits    = 5,
     booktabs  = TRUE,
@@ -1083,7 +1095,7 @@ tibble(Infantil = TMI_2020,
 
 dados_mortalidade %>% 
    kbl(
-    format    = "html",
+    format    = "latex",
     caption   = "Taxas de mortalidade infantil por mil nascidos vivos", 
     align     = "c", 
     digits    = 3,
@@ -1146,7 +1158,7 @@ dados_gbd %>%
 
 dados_gbd_tabela %>% 
   kbl(
-    format    = "html",
+    format    = "latex",
     caption   = "Taxas de probabilidade de morte (por mil)", 
     align     = "c", 
     digits    = 3,
@@ -1212,7 +1224,7 @@ dados_ripsa <-
 
 dados_ripsa %>% 
     kbl(
-    format    = "html",
+    format    = "latex",
     caption   = "Taxas de Mortalidade Infantil por mil (2011)", 
     align     = "c", 
     digits    = 3,
@@ -1278,7 +1290,7 @@ tabela_comparacao_mortalidade <-
 
 tabela_comparacao_mortalidade %>% 
   kbl(
-    format    = "html",
+    format    = "latex",
     caption   = "Comparação das Taxas de Mortalidade Infantil por mil", 
     align     = "c", 
     digits    = 3,
@@ -1413,7 +1425,7 @@ dados_aux5 <- select(dados_aux4, Causas, `Taxa de Mortalidade`, Sexo, Ano) %>%
 dados_aux5 %>% filter(Causas != "Covid-19") %>%
     kbl(
     col.names = c('Causas','2015 \n Homens', '2015 \n Mulheres', '2021 \n Homens', '2021 \n Mulheres'),
-    format    = "html",
+    format    = "latex",
     caption   = "Comparação das Estruturas de Mortalidade por Grupos de Causas, segundo o sexo, entre os anos de 2015 e 2021", 
     align     = "c", 
     digits    = 3,
@@ -1457,7 +1469,7 @@ TVFem <- read_excel(file.path(getwd(), "TabuasVida.xlsx"),
 TVMasc %>%
     kbl(
     col.names = names(TVMasc),
-    format    = "html",
+    format    = "latex",
     caption   = "Tábua de Vida - Homens", 
     align     = "c", 
     digits    = 3,
@@ -1530,7 +1542,7 @@ TVMasc %>%
 TVFem %>%
     kbl(
     col.names = names(TVFem),
-    format    = "html",
+    format    = "latex",
     caption   = "Tábua de Vida - Mulheres", 
     align     = "c", 
     digits    = 3,
