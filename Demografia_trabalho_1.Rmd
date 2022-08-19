@@ -52,6 +52,12 @@ knitr::opts_chunk$set(
 
 ```
 
+```{r logo, echo=FALSE}
+htmltools::img(src = knitr::image_uri(file.path(getwd(), "as_vert_cor.jpg")), 
+               alt = 'logo', 
+               style = 'position:absolute; top:18px; right:50px; padding:20px; height: 10em;')
+```
+
 
 # {#inic .tabset}
 
@@ -279,7 +285,7 @@ nascidos_vivos_ate_2020 %>%
 O Diagrama de Lexis solicitado é: 
 
 
-```{r, out.width = '120%'}
+```{r lexisDiagram, out.width = '120%'}
 
 lexis_grid(
   year_start = 2000,
@@ -330,9 +336,9 @@ lexis_grid(
 
 **b)** *Supondo população fechada (inexistência de migração), calcule a probabilidade de um recém-nascido na UF ou território de escolha sobreviver à idade exata 5 para as coortes de 2000 a 2016.*
 
-A probabilidade de um recém-nascido sobreviver aos 5 anos em Pernambuco é de 
+As probabilidades de um recém-nascido sobreviver aos 5 anos em Pernambuco entre os anos de 2000 e 2016 estão na tabela \@ref(tab:ProbCincoAnos) abaixo. 
 
-```{r}
+```{r ProbCincoAnos}
 nascidos_vivos_ate_2021 %>% 
   left_join(obitos_menos_5, by = c("DTNASC" = "Ano_obito")) %>% 
   mutate("Probabilidade de sobrevivência" = 1 - (Obito_menos_5_anos / Nascidos_vivos)) %>% 
@@ -346,7 +352,7 @@ kbl(
     caption   = "Probabilidade de um recém-nascido em Pernambuco sobreviver à idade exata 5 anos") %>%
   footnote(
     general  = "Dados do SIM do Ministério da Saúde referentes aos óbitos e dados do SINASC referentes aos nascimentos.",
-    general_title = " ",
+    general_title = "Fonte: ",
     footnote_as_chunk = TRUE,
     threeparttable    = TRUE
   ) %>%
@@ -413,9 +419,9 @@ obitos_menos_1 <-
 ```
 
 
-A probabilidade de um recém-nascido sobreviver ao primeiro aniversário em Pernambuco é de 
+As probabilidades de um recém-nascido sobreviver ao primeiro aniversário em Pernambuco entre os anos de 2000 a 2020 estão na tabela \@ref(tab:ProbUmAno) abaixo. 
 
-```{r}
+```{r ProbUmAno}
 nascidos_vivos_ate_2021 %>% 
   left_join(obitos_menos_1, by = c("DTNASC" = "Ano_obito")) %>% 
   mutate("Probabilidade de sobrevivência" = 1 - (Obito_menos_1_ano / Nascidos_vivos)) %>% 
@@ -441,9 +447,9 @@ kbl(
 **d)** *Comente sobre os valores encontrados. Não esquecer a qualidade da informação trabalhada.*
 
 
-Analisando a Figura 1, percebe-se que em Pernambuco houve descrescente no número de óbitos entre os anos de 2000 a 2021, enquanto houve crescente no número de nascidos vivos no mesmo período.
+Analisando a Figura \@ref(fig:lexisDiagram), percebe-se que em Pernambuco houve decréscimo no número de óbitos entre os anos de 2000 a 2021, enquanto houve crescimento no número de nascidos vivos no mesmo período.
 
-Tal fato é reforçado analisando-se as tabelas 1 e 2, onde percebe-se uma crescente na probabilidade de sobrevivência de um recém-nascido à idade de 5 anos. Seu menor valor é no ano de início (2000), com pico em 2015. Equivalentemente, A probabilidade de um recém-nascido sobreviver  ao primeiro aniversário em Pernambuco aumentou do menor valor em 2000 e teve seu ápice no último ano de análise (2020).
+Tal fato é reforçado analisando-se as tabelas 1 e 2, onde percebe-se uma crescente na probabilidade de sobrevivência de um recém-nascido à idade de 5 anos. Seu menor valor é no ano de início (2000), com pico em 2015. Equivalentemente, a probabilidade de um recém-nascido sobreviver  ao primeiro aniversário em Pernambuco aumentou do menor valor em 2000 e teve seu ápice no último ano de análise (2020). Vale a ressalva de que o cálculo da probabilidade em 2020 usou dados de 2021, que ainda são dados preliminares.
 
 ## Questão 2: Natalidade/Fecundidade 
 
@@ -572,7 +578,7 @@ pop_sex_ida_2020 <-
   # 
 ```
 
-A **Taxa Bruta de Natalidade (ou Coeficiente Geral de Natalidade)**, de acordo com a Rede Interagencial de Informações sobre a Saúde [RIPSA](http://tabnet.datasus.gov.br/cgi/idb2000/fqa06.htm) expressa a frequência anual de nascidos vivos e é dada pelo número total de nascidos vivos sobre a população total de residentes de uma determinada região. Para o estado de Pernambuco temos: `r media_nascimentos_19_21/ sum(pop_tot_2020) * 1000`.
+A **Taxa Bruta de Natalidade (ou Coeficiente Geral de Natalidade)**, de acordo com a Rede Interagencial de Informações sobre a Saúde [RIPSA](http://tabnet.datasus.gov.br/cgi/idb2000/fqa06.htm), expressa a frequência anual de nascidos vivos e é dada pelo número total de nascidos vivos sobre a população total de residentes de uma determinada região. Para o estado de Pernambuco tal taxa foi de `r media_nascimentos_19_21/ sum(pop_tot_2020) * 1000` por mil habitantes.
 
 ```{r}
 # população feminina em idade fértil 
@@ -596,43 +602,39 @@ pop_sex_ida_2020 %>%
 ```
 
  
-Já a **Taxa de Fecundidade Geral (TFG)** refere-se a divisão, em um determinado ano do total de nascidos vivos pela população feminina em período fértil (15 a 49 anos de idade). Em Pernambuco: `r media_nascimentos_19_21/ pop_fem_fertil`.
+Já a **Taxa de Fecundidade Geral (TFG)** refere-se à divisão, em um determinado ano, do total de nascidos vivos pela população feminina em período fértil (15 a 49 anos de idade). Em Pernambuco, essa taxa foi de `r media_nascimentos_19_21/ pop_fem_fertil`.
 
-As **Taxas específicas de fecundidade feminina (TEFs)** correspondem à divisão do total de nascimentos vivos de uma determinada idade ou grupo etário pelo total de mulheres dessa idade ou grupo etário em um determinado ano.
+As **Taxas específicas de fecundidade feminina (TEFs)** correspondem à divisão do total de nascimentos vivos de uma determinada idade ou grupo etário pelo total de mulheres dessa idade ou grupo etário em um determinado ano. Os dados foram: 
 
-Para a faixa etária entre 15 a 19 anos:
+* Para a faixa etária entre 15 a 19 anos:
 
 `r nascimentos_total_21 / 382499`
 
-Entre 20 e 24 anos:
+* Entre 20 e 24 anos:
 
 `r nascimentos_total_21 / 407176`
 
-Entre 25 e 29 anos:
+* Entre 25 e 29 anos:
 
 `r nascimentos_total_21 / 393940`
 
-Entre 30 e 34 anos:
+* Entre 30 e 34 anos:
 
 `r nascimentos_total_21 / 403316`
 
-Entre 35 e 39 anos:
+* Entre 35 e 39 anos:
 
 `r nascimentos_total_21 / 394441`
 
-Entre 40 e 44 anos:
+* Entre 40 e 44 anos:
 
 `r nascimentos_total_21 / 368470`
 
-Entre 45 e 49 anos:
+* Entre 45 e 49 anos:
 
 `r nascimentos_total_21 / 328946`
 
-A **Taxa de Fecundidade Total (TFT)** é obtida pelo somatório das taxas específicas de fecundidade para as mulheres em idade fértil residentes de uma região específica.
-
-A TFT para o estado de Pernambuco corresponde a `r (nascimentos_total_21 / 382499) + (nascimentos_total_21 / 407176) + (nascimentos_total_21 / 393940) + (nascimentos_total_21 / 403316) + (nascimentos_total_21 / 368470) + (nascimentos_total_21 / 328946)`
-
-A **Taxa Bruta de Reprodução** assemelha-se à **Taxa Bruta de Natalidade**, diferenciando-se desta última apenas por considerar somente o número de **filhas** nascidas vivas. O valor desta taxa, calculada para o estado de Pernambuco é:
+A **Taxa de Fecundidade Total (TFT)** é obtida pelo somatório das taxas específicas de fecundidade para as mulheres em idade fértil residentes de uma região específica. A TFT para o estado de Pernambuco corresponde a `r (nascimentos_total_21 / 382499) + (nascimentos_total_21 / 407176) + (nascimentos_total_21 / 393940) + (nascimentos_total_21 / 403316) + (nascimentos_total_21 / 368470) + (nascimentos_total_21 / 328946)`.
 
 
 
@@ -660,11 +662,10 @@ media_nasc_fem_19_21 <- round(mean(c(nascimentos_fem, nascimentos_fem_21)))
 
 ```
 
-`r (media_nasc_fem_19_21 / pop_fem_fertil) * 1000`
 
-A **Taxa Líquida de Reprodução** relaciona-se ao número de filhas tidas, por mulher, durante sua idade reprodutiva. Para o estado de Pernambuco, este valor é:
+A **Taxa Bruta de Reprodução** assemelha-se à Taxa Bruta de Natalidade, diferenciando-se desta última apenas por considerar somente o número de **filhas** nascidas vivas. O valor desta taxa, calculada para o estado de Pernambuco por mil habitantes é `r (media_nasc_fem_19_21 / pop_fem_fertil) * 1000`.
 
-`r mean(nascimentos_fem_21 / pop_fem_fertil)`
+A **Taxa Líquida de Reprodução** relaciona-se ao número de filhas tidas, por mulher, durante sua idade reprodutiva. Para o estado de Pernambuco, este valor é `r mean(nascimentos_fem_21 / pop_fem_fertil)`.
 
 **b)** *Compare os seus resultados com os valores obtidos pelo estudo GBD, pela Nações Unidas (UN Population) e aqueles publicados no site do Datasus (RIPSA - Indicadores e dados básicos). Como  os indicadores de reprodução não aparecem nessas listas, a partir das TFT, calcule esses indicadores para comparação.*
 
@@ -674,11 +675,11 @@ As Taxas de Fecundidade Total para o estado de Pernambuco, no período citado es
 
 1. Idade e Escolaridade da Mãe:
 
-Em um primeiro momento, é importante conceituar a ideia de **gravidez na adolescência**, que diz respeito a proporção de nascidos vivos por mães na faixa etária entre 10 a 19 anos. Importante ressaltar que na faixa etária entre 10 e 14 anos há, não raramente, presunção de violência. 
+Em um primeiro momento, é importante conceituar a ideia de **gravidez na adolescência**, que diz respeito à proporção de nascidos vivos por mães na faixa etária entre 10 a 19 anos. Importante ressaltar que na faixa etária entre 10 e 14 anos há, não raramente, presunção de violência. 
 
-De acordo com os dados coletados, a partir do SINASC, é possível afirmar que há uma correlação entre baixos indíces de escolaridade, categorizadas a partir da tabela entre as classes "nenhuma", "1 a 3 anos", "4 a 7 anos", "8 a 11 anos" e "12 ou mais" referente a média, em anos, de escolaridade das mães pernambucanas, e número de filhos nascidos vivos.
+De acordo com os dados coletados, a partir do SINASC, é possível afirmar que há uma correlação entre baixos indíces de escolaridade, categorizadas a partir da tabela entre as classes "nenhuma", "1 a 3 anos", "4 a 7 anos", "8 a 11 anos" e "12 ou mais" referente à média, em anos, de escolaridade das mães pernambucanas e o número de filhos nascidos vivos.
 
-A baixa escolaridade quase sempre está diretamente ligada à fatores socioeconômicos de vulnerabilidade. Neste sentido, pode-se inferir que existe, em mães com menores índices de escolaridade, também, risco obstétrico, por se tratar de um grupo etário que possui pouco ou nenhum conhecimento de educação em saúde.
+A baixa escolaridade quase sempre está diretamente ligada à fatores socioeconômicos de vulnerabilidade. Neste sentido, pode-se inferir que existe também, em mães com menores índices de escolaridade, risco obstétrico, por se tratar de um grupo etário que possui pouco ou nenhum conhecimento de educação em saúde.
 
 
 ```{r}
@@ -687,17 +688,41 @@ A baixa escolaridade quase sempre está diretamente ligada à fatores socioecon�
   filter(IDADEMAE != 99 & is.na(IDADEMAE) == FALSE) #filtra as colunas selecionadas
 
 data_limpa <- maes %>%
-  filter(ESCMAE %in% c('1', '2', '3', '4', '5'),QTDFILMORT != 00,
-         ESCMAE %in% c('1', '2', '3', '4', '5'))%>%
+  filter(
+    ESCMAE %in% c('1', '2', '3', '4', '5'),
+    QTDFILMORT != 00,
+    ESCMAE %in% c('1', '2', '3', '4', '5')
+  ) %>%
   mutate(
-    escolaridade = factor(ESCMAE, levels = c(1:5),
-                          labels = c("Nenhuma", "1 a 3 anos","4 a 7 anos","8 a 11 anos",
-                                     "12 ou mais")),
+    escolaridade = factor(
+      ESCMAE,
+      levels = c(1:5),
+      labels = c("Nenhuma",
+                 "1 a 3 anos",
+                 "4 a 7 anos",
+                 "8 a 11 anos",
+                 "12 ou mais")
+    ),
     IDADEMAE = as.character(IDADEMAE),
     IDADEMAE = as.numeric(IDADEMAE),
-    faixa_et = cut(IDADEMAE, breaks = c(seq(from = 10, to = 45, by = 5), max(IDADEMAE)), 
-                   right = FALSE, include.lowest = TRUE,
-                   labels = c('10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', "45+"))
+    faixa_et = cut(
+      IDADEMAE,
+      breaks = c(seq(
+        from = 10, to = 45, by = 5
+      ), max(IDADEMAE)),
+      right = FALSE,
+      include.lowest = TRUE,
+      labels = c(
+        '10-14',
+        '15-19',
+        '20-24',
+        '25-29',
+        '30-34',
+        '35-39',
+        '40-44',
+        "45+"
+      )
+    )
     
   )
 
@@ -713,33 +738,42 @@ vline_df <- data.frame(escolaridade = levels(data_limpa$escolaridade),
                        medianas = tapply(X = data_limpa$IDADEMAE, INDEX = data_limpa$escolaridade,
                                        FUN = median))
 
-graf_dist_idade_esc <- data_limpa %>%
-  ggplot(aes(IDADEMAE))+
-  geom_histogram(stat = "count", fill = "#a6bddb")+
-  facet_grid(rows = vars(escolaridade))+
-  labs(title = "Distribuição da idade das mães por grupo de escolaridade", x = "Idade da mãe")+
-  geom_vline(data = vline_df, aes(xintercept = medianas), linetype = "dashed",
-             colour = "red4")+
-  scale_x_continuous(breaks = c(10, 20, 30, 40, 50, 60), limits = c(10, 60))+
-  theme_bw()+
-  theme(axis.line.x = element_line(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank(),
-        panel.background = element_blank(),
-        panel.grid.major = element_blank(),
-        strip.background = element_rect(fill = "white", color = "black"),
-        plot.title = element_text(hjust = 0))
+graf_dist_idade_esc <-
+  data_limpa %>%
+  ggplot(aes(IDADEMAE)) +
+  geom_histogram(stat = "count", fill = "#a6bddb") +
+  geom_vline(
+    data = vline_df,
+    aes(xintercept = medianas),
+    linetype = "dashed",
+    colour = "red4"
+  ) +
+  facet_grid(rows = vars(factor(escolaridade))) +
+  labs(title = "Distribuição da idade das mães por grupo de escolaridade",
+       x     = "Idade da mãe") +
+  scale_x_continuous(breaks = c(10, 20, 30, 40, 50, 60),
+                     limits = c(10, 60)) +
+  theme_bw() +
+  theme(
+    axis.line.x = element_line(),
+    axis.ticks.y = element_blank(),
+    axis.title.y = element_blank(),
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    strip.background = element_rect(fill = "white", color = "black"),
+    plot.title = element_text(hjust = 0)
+  )
 
 graf_dist_idade_esc
 ```
 
 **d)** *Comente esses resultados (inclusive os gráficos das nfx), fazendo referência a artigos já publicados sobre o assunto.*
 
-Para esta questão foi escolhida a relação entre idade e escolaridade da mãe, referente aos dados do SINASC para 2021 no estado de Pernambuco. Para tanto, faz-se necessário a análise de dados que possam dar luz às relações entre a interação das duas variáveis citadas na mortalidade neonatal, considerando a baixa escolaridade, bem como a incidência de gravidez nos estratos mais baixos da [pirâmide etária brasileira](https://educa.ibge.gov.br/jovens/conheca-o-brasil/populacao/18318-piramide-etaria.html) enquanto fatores de risco.
+Para esta questão, foi escolhida a relação entre idade e escolaridade da mãe, referente aos dados do SINASC para 2021 no Estado de Pernambuco. Para tanto, faz-se necessário a análise de dados que possam dar luz às relações entre a interação das duas variáveis citadas na mortalidade neonatal, considerando a baixa escolaridade, bem como a incidência de gravidez nos estratos mais baixos da [pirâmide etária brasileira](https://educa.ibge.gov.br/jovens/conheca-o-brasil/populacao/18318-piramide-etaria.html) enquanto fatores de risco.
 
-De acordo com artigo publicado no Volume 51 da Revista de Saúde Pública da Universidade de São Paulo, pelos pesquisadores **Sandra Costa Fonseca; Patricia Viana Guimarães Flores; Kenneth Rochel Camargo; Rejane Sobrino Pinheiro e  Claudia Medina Coeli**, intitulado [Escolaridade e idade materna: desigualdades no óbito neonatal] (https://rsp.fsp.usp.br/artigo/escolaridade-e-idade-materna-desigualdades-no-obito-neonatal/) "Em todos os estratos de idade, filhos de mães com escolaridade inferior a quatro anos apresentam maior chance de óbito neonatal, quando comparados aos filhos de mães com pelo menos quatro anos de escolaridade" (FONSECA SC et al., 2017, p. 03).
+De acordo com artigo publicado no Volume 51 da Revista de Saúde Pública da Universidade de São Paulo, pelos pesquisadores **Sandra Costa Fonseca; Patricia Viana Guimarães Flores; Kenneth Rochel Camargo; Rejane Sobrino Pinheiro e  Claudia Medina Coeli**, intitulado [Escolaridade e idade materna: desigualdades no óbito neonatal](https://rsp.fsp.usp.br/artigo/escolaridade-e-idade-materna-desigualdades-no-obito-neonatal/), "em todos os estratos de idade, filhos de mães com escolaridade inferior a quatro anos apresentam maior chance de óbito neonatal, quando comparados aos filhos de mães com pelo menos quatro anos de escolaridade" (FONSECA SC et al., 2017, p. 03).
 
-O mesmo estudo cita o artigo, publicado na revista Lancet e intitulado [Socioeconomic inequality in neonatal mortality in countries of low and middle income; a multicountry analysis](https://linkinghub.elsevier.com/retrieve/pii/S2214109X14700087) de Mckinnon et al, que aponta uma redução da Taxa de Mortalidade Neonatal em associação com com mudança nos indicadores de desigualdade educacional – moderada para redução absoluta e fraca para redução relativa (FONSECA SC et al., 2017, p. 05).
+O mesmo estudo cita o artigo, publicado na revista Lancet e intitulado [Socioeconomic inequality in neonatal mortality in countries of low and middle income; a multicountry analysis](https://linkinghub.elsevier.com/retrieve/pii/S2214109X14700087) de Mckinnon et al, que aponta uma redução da Taxa de Mortalidade Neonatal em associação com com mudança nos indicadores de desigualdade educacional – moderada para redução absoluta e fraca para redução relativa.
 
 
 ## Questão 3: Mortalidade
@@ -1264,7 +1298,7 @@ dados_ripsa %>%
          Ano   = 2011,
          Valor = parse_number(Valor)) 
 
-tabela_comparacao_mortalidade <-
+tabela_comparacao_mortalidade <- 
   dados_mortalidade %>%
   bind_rows(dados_ripsa) %>%
   bind_rows(dados_gbd_tabela) %>%
