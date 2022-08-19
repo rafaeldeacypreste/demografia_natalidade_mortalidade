@@ -8,21 +8,21 @@ author:
   - "Rafael de Acypreste^[Matrícula: 200060023]"
 date: "`r format(Sys.Date(),'%d/%m/%Y')`"
 output:
+  bookdown::html_document2:
+    df_print: paged
+    fig_caption: true
+    number_sections: no
+    theme: united
+    toc: no
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
   bookdown::pdf_document2:  
     citation_package: natbib
     fig_caption: true
     number_sections: true
     toc_depth: 4
     latex_engine: xelatex
-  bookdown::html_document2:
-    df_print: paged
-    fig_caption: true
-    number_sections: no
-    theme: lumen
-    toc: no
-    toc_float:
-      collapsed: yes
-      smooth_scroll: yes
   bookdown::word_document2: default
 fontsize: 12pt
 linkcolor: blue
@@ -59,9 +59,9 @@ knitr::opts_chunk$set(
 
 
 
-Neste documento, estão os explicados os procedimentos para as respostas ao Primeiro trabalho: `TRABALHO 1 - Natalidade/Fecundidade e Mortalidade`, cujo prazo de entrega é dia 15/08/2022. Os pacotes utilizados foram:
+Neste documento, estão os explicados os procedimentos para as respostas ao Primeiro trabalho: `TRABALHO 1 - Natalidade/Fecundidade e Mortalidade`, cujo prazo de entrega é dia 22/08/2022. Os pacotes utilizados foram:
 
-```{r}
+```{r, echo=TRUE}
 if (!require("pacman")) install.packages("pacman")
 
 if (!require("microdatasus")) {
@@ -74,23 +74,21 @@ pacman::p_load("microdatasus", ## Download dos dados de 2000 a 2020
                "kableExtra",   ## Elaboração das tabelas em LaTeX e html
                "lubridate",
                "readxl",
-               "LexisPlotR",
-               "data.table",
+               "LexisPlotR",   ## Pacote para Diagramas de Lexix
+               "data.table",  
                "scales")
 
 
 options(scipen = 99)
 ```
 
-
-### Download dos dados
-
+Agora, pode-se baixar os dados básicos para elaboração do trabalho.
 
 ### Dados de Nascidos Vivos a partir do SINASC
 
 #### Microdados DATASUS
 
-Os microdados do SINASC de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus), criado por @. Os procedimentos de pré-processamento dos micradodos realizados podem ser encontrados em: https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SINASC. Os dados para o Estado de Pernambuco podem ser baixados por
+Os microdados do SINASC de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus), criado por Raphael de Freitas SALDANHA, Ronaldo Rocha BASTOS e  Christovam BARCELLOS^[SALDANHA, Raphael de Freitas; BASTOS, Ronaldo Rocha; BARCELLOS, Christovam. Microdatasus: pacote para download e pré-processamento de microdados do Departamento de Informática do SUS (DATASUS). Cad. Saúde Pública, Rio de Janeiro , v. 35, n. 9, e00032419, 2019 . Available from http://ref.scielo.org/dhcq3y.]. Os procedimentos de pré-processamento dos micradodos realizados podem ser encontrados na plataforma [GitHub](https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SINASC). Os dados para o Estado de Pernambuco podem ser baixados por
 
 ```{r,  echo=TRUE}
   # Download dos microdados do datasus
@@ -105,7 +103,7 @@ dados_sinasc <- fetch_datasus(
 
 ### Dados preliminares 2021
 
-Para o ano de 2021, há apenas dados preliminares que podem ser tratados em:
+Para o ano de 2021, há apenas dados preliminares que podem ser acessados e filtrados em:
 
 ```{r, echo=TRUE, results='hide'}
   # Repositório Ministério da Saúde
@@ -135,7 +133,7 @@ unlink(tempd)
 
 ### Dados de Nascidos Vivos a partir do SIM
 
-Os microdados do SIM de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus), criado por @. As convenções adotadas no SIM podem ser encontradas em https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SIM. Os dados para o Estado de Pernambuco podem ser baixados por
+Os microdados do SIM de 2000 a 2020 foram baixados com a ajuda do pacote [`microdatasus`](https://github.com/rfsaldanha/microdatasus). As convenções adotadas no SIM podem ser encontradas no [GitHub]( https://github.com/rfsaldanha/microdatasus/wiki/Conven%C3%A7%C3%B5es-SIM). Os dados para o Estado de Pernambuco podem ser baixados por
 
 ```{r, echo=TRUE}
 dados_sim <- fetch_datasus(
@@ -149,6 +147,7 @@ dados_sim <- fetch_datasus(
 
 ### Dados preliminares de óbitos (2021)
 
+De maneira semelhante aos dados de nascimentos, há apenas dados preliminares, que podem ser acessados e baixados por:
 
 ```{r,  echo=TRUE, results='hide'}
 
@@ -173,11 +172,11 @@ unlink(tempd)
 ```
 
 
-Também precisamos dos dados de projeção populacional para o Estado de Pernambuco. Nesse caso, utilizamos as projeções elaboradas pelo próprio IBGE e disponíveis [aqui](https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&t=resultados).
+Também são necessários dados de projeção populacional para o Estado de Pernambuco. Nesse caso, foram utilizadas as projeções elaboradas pelo próprio IBGE e disponíveis [aqui](https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&t=resultados).
 
 Com isso, tem-se as projeções populacionais por sexo e idade. Os dados de projeção populacional do IBGE podem ser acessados em: 
 
-```{r}
+```{r, echo=TRUE}
   # Repositório do IBGE para a tabela .xls
 file <-
   "https://ftp.ibge.gov.br/Projecao_da_Populacao/Projecao_da_Populacao_2018/projecoes_2018_populacao_idade_simples_2010_2060_20201209.xls"
@@ -192,12 +191,12 @@ download.file(url      = file,
 
 ```
 
-
+Agora, para acessar as questões, basta navegar no menu suspenso acima.
 
 ## Questão 1: Diagrama de Lexis
 
 
-a) Construir o Diagrama de Lexis para os dados de nascidos vivos de 2000 a 2021 da UF escolhida (SINASC) e de óbitos menores de 5 anos (idades simples) para o mesmo período segundo ano de nascimento.
+**a)** *Construir o Diagrama de Lexis para os dados de nascidos vivos de 2000 a 2021 da UF escolhida (SINASC) e de óbitos menores de 5 anos (idades simples) para o mesmo período segundo ano de nascimento.*
 
 ```{r}
 obitos_menos_5_anos <- 
@@ -329,7 +328,7 @@ lexis_grid(
 ```
 
 
-b) Supondo população fechada (inexistência de migração), calcule a probabilidade de um recém-nascido na UF ou território de escolha sobreviver à idade exata 5 para as coortes de 2000 a 2016.
+**b)** *Supondo população fechada (inexistência de migração), calcule a probabilidade de um recém-nascido na UF ou território de escolha sobreviver à idade exata 5 para as coortes de 2000 a 2016.*
 
 A probabilidade de um recém-nascido sobreviver aos 5 anos em Pernambuco é de 
 
@@ -358,7 +357,7 @@ kbl(
 
 
 
-c) Considerando o mesmo pressuposto, calcule a probabilidade de sobreviver ao primeiro aniversário dos recém-nascidos no período de 2000 a 2020.
+**c)** *Considerando o mesmo pressuposto, calcule a probabilidade de sobreviver ao primeiro aniversário dos recém-nascidos no período de 2000 a 2020.*
 
 ```{r}
 obitos_menos_1_ano <- 
@@ -439,7 +438,7 @@ kbl(
 ```
 
 
-d) Comente sobre os valores encontrados. Não esquecer a qualidade da informação trabalhada.
+**d)** *Comente sobre os valores encontrados. Não esquecer a qualidade da informação trabalhada.*
 
 
 Analisando a Figura 1, percebe-se que em Pernambuco houve descrescente no número de óbitos entre os anos de 2000 a 2021, enquanto houve crescente no número de nascidos vivos no mesmo período.
@@ -448,7 +447,7 @@ Tal fato é reforçado analisando-se as tabelas 1 e 2, onde percebe-se uma cresc
 
 ## Questão 2: Natalidade/Fecundidade 
 
-a) Com base nos dados do SINASC para os de 2019 a 2021 e na população por sexo e idade estimada (projetada - 2020), construa os seguintes indicadores para a Unidade da Federação:
+**a)** *Com base nos dados do SINASC para os de 2019 a 2021 e na população por sexo e idade estimada (projetada - 2020), construa os seguintes indicadores para a Unidade da Federação:*
 
 1. Taxa Bruta de Natalidade;
 2. Taxa Fecundidade Geral (TFG) e Taxas específicas de fecundidade;
@@ -573,9 +572,7 @@ pop_sex_ida_2020 <-
   # 
 ```
 
-A **Taxa Bruta de Natalidade (ou Coeficiente Geral de Natalidade)**, de acordo com a Rede Interagencial de Informações sobre a Saúde [RIPSA](http://tabnet.datasus.gov.br/cgi/idb2000/fqa06.htm) expressa a frequência anual de nascidos vivos e é dada pelo número total de nascidos vivos sobre a população total de residentes de uma determinada região. Para o estado de Pernambuco temos:
-
-`r media_nascimentos_19_21/ sum(pop_tot_2020) * 1000`
+A **Taxa Bruta de Natalidade (ou Coeficiente Geral de Natalidade)**, de acordo com a Rede Interagencial de Informações sobre a Saúde [RIPSA](http://tabnet.datasus.gov.br/cgi/idb2000/fqa06.htm) expressa a frequência anual de nascidos vivos e é dada pelo número total de nascidos vivos sobre a população total de residentes de uma determinada região. Para o estado de Pernambuco temos: `r media_nascimentos_19_21/ sum(pop_tot_2020) * 1000`.
 
 ```{r}
 # população feminina em idade fértil 
@@ -633,9 +630,7 @@ Entre 45 e 49 anos:
 
 A **Taxa de Fecundidade Total (TFT)** é obtida pelo somatório das taxas específicas de fecundidade para as mulheres em idade fértil residentes de uma região específica.
 
-A TFT para o estado de Pernambuco corresponde a:
-
-`r (nascimentos_total_21 / 382499) + (nascimentos_total_21 / 407176) + (nascimentos_total_21 / 393940) + (nascimentos_total_21 / 403316) + (nascimentos_total_21 / 368470) + (nascimentos_total_21 / 328946)`
+A TFT para o estado de Pernambuco corresponde a `r (nascimentos_total_21 / 382499) + (nascimentos_total_21 / 407176) + (nascimentos_total_21 / 393940) + (nascimentos_total_21 / 403316) + (nascimentos_total_21 / 368470) + (nascimentos_total_21 / 328946)`
 
 A **Taxa Bruta de Reprodução** assemelha-se à **Taxa Bruta de Natalidade**, diferenciando-se desta última apenas por considerar somente o número de **filhas** nascidas vivas. O valor desta taxa, calculada para o estado de Pernambuco é:
 
@@ -671,11 +666,11 @@ A **Taxa Líquida de Reprodução** relaciona-se ao número de filhas tidas, por
 
 `r mean(nascimentos_fem_21 / pop_fem_fertil)`
 
-b) Compare os seus resultados com os valores obtidos pelo estudo GBD, pela Nações Unidas (UN Population) e aqueles publicados no site do Datasus (RIPSA - Indicadores e dados básicos). Como  os indicadores de reprodução não aparecem nessas listas, a partir das TFT, calcule esses indicadores para comparação.
+**b)** *Compare os seus resultados com os valores obtidos pelo estudo GBD, pela Nações Unidas (UN Population) e aqueles publicados no site do Datasus (RIPSA - Indicadores e dados básicos). Como  os indicadores de reprodução não aparecem nessas listas, a partir das TFT, calcule esses indicadores para comparação.*
 
 As Taxas de Fecundidade Total para o estado de Pernambuco, no período citado estão expostas no item a) da **Questão 2**. Em comparação com os dados do [Global Burden of Diseases](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(18)32278-5/fulltext), as taxas calculadas se mostraram menores do que as apresentadas neste trabalho.
 
-c) Para os dados do SINASC para 2021, analise a associação entre (apresente ao menos uma medida de associação): 
+**c)** *Para os dados do SINASC para 2021, analise a associação entre (apresente ao menos uma medida de associação)*: 
 
 1. Idade e Escolaridade da Mãe:
 
@@ -738,7 +733,7 @@ graf_dist_idade_esc <- data_limpa %>%
 graf_dist_idade_esc
 ```
 
-d) Comente esses resultados (inclusive os gráficos das nfx), fazendo referência a artigos já publicados sobre o assunto.
+**d)** *Comente esses resultados (inclusive os gráficos das nfx), fazendo referência a artigos já publicados sobre o assunto.*
 
 Para esta questão foi escolhida a relação entre idade e escolaridade da mãe, referente aos dados do SINASC para 2021 no estado de Pernambuco. Para tanto, faz-se necessário a análise de dados que possam dar luz às relações entre a interação das duas variáveis citadas na mortalidade neonatal, considerando a baixa escolaridade, bem como a incidência de gravidez nos estratos mais baixos da [pirâmide etária brasileira](https://educa.ibge.gov.br/jovens/conheca-o-brasil/populacao/18318-piramide-etaria.html) enquanto fatores de risco.
 
