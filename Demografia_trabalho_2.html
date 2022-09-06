@@ -14,7 +14,7 @@
 <meta name="author" content="Marco Aurélio" />
 <meta name="author" content="Rafael de Acypreste" />
 
-<meta name="date" content="2022-03-09" />
+<meta name="date" content="2022-06-09" />
 
 <title>TRABALHO 1 - Estrutura populacional e projeções</title>
 
@@ -198,7 +198,7 @@ pre code {
 <h4 class="author">João Victor Maia<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></h4>
 <h4 class="author">Marco Aurélio<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></h4>
 <h4 class="author">Rafael de Acypreste<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a></h4>
-<h4 class="date">03/09/2022</h4>
+<h4 class="date">06/09/2022</h4>
 
 </div>
 
@@ -223,7 +223,8 @@ pacman::p_load(&quot;microdatasus&quot;, ## Download dos dados de 2000 a 2020
                &quot;readxl&quot;,
                &quot;LexisPlotR&quot;,   ## Pacote para Diagramas de Lexix
                &quot;data.table&quot;,  
-               &quot;scales&quot;)
+               &quot;scales&quot;,
+               janitor)
 
 
 options(scipen = 99)</code></pre>
@@ -234,19 +235,34 @@ options(scipen = 99)</code></pre>
 </div>
 <div id="parte-2-projeção-de-população" class="section level2">
 <h2>Parte 2: Projeção de População</h2>
+<blockquote>
 <p><strong>a)</strong> <em>Os textos-base para responder a questão são <span class="citation"><a href="#ref-IBGE2021" role="doc-biblioref">IBGE</a> (<a href="#ref-IBGE2021" role="doc-biblioref">2021</a>)</span> e <span class="citation"><a href="#ref-IBGE2018" role="doc-biblioref">IBGE</a> (<a href="#ref-IBGE2018" role="doc-biblioref">2018</a>)</span> sobre as metodologias de estimação populacional.</em></p>
+</blockquote>
 <blockquote>
 <p><em>1) Metodologia utilizada para projetar a população do país segundo UF.</em></p>
 </blockquote>
-<p>Nota-se que o IBGE divulga desde 1973 as projeções populacionais pelo método das componentes principais. Além disso, desde 1975, divulga as projeções para Estados e Municípios durante os períodos intercensitários <span class="citation">(<a href="#ref-IBGE2018" role="doc-biblioref">IBGE 2018</a>)</span>.</p>
-<p>Em qualquer sinal de de que estejam se distanciando do cenário real, as projeções devem ser revistas. Essas revisões também ocorrem após a realização de censos ou processos de contagem populacional.</p>
-<p>As <strong>projeções populacionais segundo a UF</strong> foram realizadas com o <em>software</em> do Departamento de Censo dos Estados Unidos (<em>Census Bureau</em>) denominado <em>US Census Bureau Rural and Urban Projection Program - RUP</em> <span class="citation">(<a href="#ref-IBGE2018" role="doc-biblioref">IBGE 2018</a>)</span>.</p>
+<p>Nota-se que o IBGE divulga desde 1973 as projeções populacionais pelo método das componentes principais. Além disso, desde 1975, divulga as projeções para Estados e Municípios durante os períodos intercensitários <span class="citation">(<a href="#ref-IBGE2018" role="doc-biblioref">IBGE 2018</a>)</span>. Ademais, sob qualquer sinal de de que estejam se distanciando do cenário real, as projeções devem ser revistas. Essas revisões também ocorrem após a realização de censos ou processos de contagem populacional.</p>
+<p>As <strong>projeções populacionais segundo a UF</strong> em 2018 foram realizadas com o <em>software</em> do Departamento de Censo dos Estados Unidos (<em>Census Bureau</em>) denominado <em>US Census Bureau Rural and Urban Projection Program - RUP</em> <span class="citation">(<a href="#ref-IBGE2018" role="doc-biblioref">IBGE 2018</a>)</span>.</p>
 <p>O método utilizado foi o <strong>método das componentes demográficas</strong>. Para ser aplicado, é preciso partir de uma estrutura populacional já conhecida. Além disso, são necessárias informações confiáveis de fecundidade, mortalidade e migração. Com isso, são calculadas as interações entre essas três componentes seguindo as coortes ao longo do tempo. Avaliar tais interações é a parte mais delicada do processo, pois demanda acurácia nas projeções a respeito do futuro das taxas de fecundidade, mortalidade e migração de uma população <span class="citation">(<a href="#ref-IBGE2018" role="doc-biblioref">IBGE 2018</a>)</span>.</p>
+<p>Além de serem base para a formulação de diversas políticas públicas nos âmbitos naciona e regional, servem de base para estimar a população dos Municípios.</p>
 <blockquote>
 <p><em>2) Metodologia para estimar populações dos municípios brasileiros.</em></p>
 </blockquote>
 <p>Como os munípios não apresentam as informações em nível de confiabilidade e detalhamento necessários para a aplicação do método das componentes demográficas, outra metodologia é necessária. O <span class="citation"><a href="#ref-IBGE2021" role="doc-biblioref">IBGE</a> (<a href="#ref-IBGE2021" role="doc-biblioref">2021</a>)</span> utiliza uma metodologia proposta por <span class="citation"><a href="#ref-madeira1972" role="doc-biblioref">Madeira and Simões</a> (<a href="#ref-madeira1972" role="doc-biblioref">1972</a>)</span>.</p>
 <p>Em síntese, observa-se a tendência de crescimento populacional do Município entre dois censos consecutivos. Em seguida, compara-se à tendência de crescimento de uma área geográfica hierarquicamente superior <span class="citation"><a href="#ref-IBGE2021" role="doc-biblioref">IBGE</a> (<a href="#ref-IBGE2021" role="doc-biblioref">2021</a>)</span> com dados de maior qualidade. Assim, essa área superior é dividida de modo que a soma das estimativas das suas sub-regiões iguale a projeção para a região base. Para o caso da estimativa 2021 para os Municípios, foram adotadas as projeções por UF referidas acima.</p>
+<blockquote>
+<p><strong>b)</strong> <em>Assumindo população fechada (ausência de migração), projete a população da UF escolhida de 2010 a 2020, segundo o cenário de mortalidade e fecundidade do período 2010-2015 e 2015-2020. Considere os indicadores de mortalidade e fecundidade obtidos no Trabalho 1 e os publicados no portal do Datasus.</em></p>
+</blockquote>
+<p>A estimativa populacional partirá dos dados disponibilizados pelas projeções elaboradas pelo próprio IBGE e disponíveis <a href="https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&amp;t=resultados">aqui</a>. Trata-se da revisão de 2018, que utilizou os dados do Censo Demográfico de 2010 como base <span class="citation">(<a href="#ref-IBGE2018" role="doc-biblioref">IBGE 2018</a>)</span>.</p>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["Faixa_idade"],"name":[1],"type":["chr"],"align":["left"]},{"label":["Pop_masc_2010"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["Pop_fem_2010"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["Pop_tot_2010"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"0-4","2":"377368","3":"362032","4":"739400"},{"1":"5-9","2":"399486","3":"386337","4":"785823"},{"1":"10-14","2":"429335","3":"417573","4":"846908"},{"1":"15-19","2":"413048","3":"411631","4":"824679"},{"1":"20-24","2":"408323","3":"420394","4":"828717"},{"1":"25-29","2":"384161","3":"406098","4":"790259"},{"1":"30-34","2":"349403","3":"377415","4":"726818"},{"1":"35-39","2":"305647","3":"338205","4":"643852"},{"1":"40-44","2":"274866","3":"310061","4":"584927"},{"1":"45-49","2":"237047","3":"271967","4":"509014"},{"1":"50-54","2":"193601","3":"228736","4":"422337"},{"1":"55-59","2":"154822","3":"192598","4":"347420"},{"1":"60-64","2":"130311","3":"162229","4":"292540"},{"1":"65-69","2":"96898","3":"125783","4":"222681"},{"1":"70-74","2":"74657","3":"101964","4":"176621"},{"1":"75-79","2":"46682","3":"67330","4":"114012"},{"1":"80+","2":"57065","3":"87800","4":"144865"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>Para o primeiro período de 2010 e 2015, utilizou-se a tábua de vida de 2013 elaborada pelo próprio IBGE e disponível <a href="https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&amp;t=resultados">aqui</a>. Já para a projeção da população entre 2015 e 2020, foram utilizados os dados do <a href="https://rpubs.com/rafaeldeacypreste/analise-demografica-pernambuco">trabalho 1</a>, conforme orientação da professora.</p>
+<blockquote>
+<p>Projeção da população para 2015</p>
+</blockquote>
 <div id="referências" class="section level3 unnumbered">
 <h3>Referências</h3>
 <div id="refs" class="references csl-bib-body hanging-indent">

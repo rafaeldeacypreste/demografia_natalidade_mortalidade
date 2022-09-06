@@ -85,7 +85,8 @@ pacman::p_load("microdatasus", ## Download dos dados de 2000 a 2020
                "readxl",
                "LexisPlotR",   ## Pacote para Diagramas de Lexix
                "data.table",  
-               "scales")
+               "scales",
+               janitor)
 
 
 options(scipen = 99)
@@ -99,7 +100,7 @@ Agora, pode-se baixar os dados básicos para elaboração do trabalho.
 
 ## Parte 2: Projeção de População
 
-**a)** *Os textos-base para responder a questão são @IBGE2021 e @IBGE2018 sobre as metodologias de estimação populacional.*
+> **a)** *Os textos-base para responder a questão são @IBGE2021 e @IBGE2018 sobre as metodologias de estimação populacional.*
 
 > *1) Metodologia utilizada para projetar a população do país segundo UF.*
 
@@ -121,8 +122,242 @@ Como os munípios não apresentam as informações em nível de confiabilidade e
 Em síntese, observa-se a tendência de crescimento populacional do Município entre dois censos consecutivos. Em seguida, compara-se à tendência de crescimento de uma área geográfica hierarquicamente superior @IBGE2021 com dados de maior qualidade. Assim, essa área superior é dividida de modo que a soma das estimativas das suas sub-regiões iguale a projeção para a região base. Para o caso da estimativa 2021 para os Municípios, foram adotadas as projeções por UF referidas acima.
 
 
-**b)** *Assumindo população fechada (ausência de migração), projete a população da UF escolhida de 2010 a 2020, segundo o cenário de mortalidade e fecundidade do período 2010-2015 e 2015-2020. Considere os indicadores de mortalidade e fecundidade obtidos no Trabalho 1 e os publicados no portal do Datasus.*
+> **b)** *Assumindo população fechada (ausência de migração), projete a população da UF escolhida de 2010 a 2020, segundo o cenário de mortalidade e fecundidade do período 2010-2015 e 2015-2020. Considere os indicadores de mortalidade e fecundidade obtidos no Trabalho 1 e os publicados no portal do Datasus.*
 
+
+A estimativa populacional partirá dos dados disponibilizados pelas projeções elaboradas pelo próprio IBGE e disponíveis [aqui](https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&t=resultados). Trata-se da revisão de 2018, que utilizou os dados do Censo Demográfico de 2010 como base [@IBGE2018].
+
+```{r}
+  # Repositório do IBGE para a tabela .xls
+file <-
+  "https://ftp.ibge.gov.br/Projecao_da_Populacao/Projecao_da_Populacao_2018/projecoes_2018_populacao_2010_2060_20200406.xls"
+
+  # Arquivo temporário para download da tabela
+temp_pop <- tempfile()
+
+  # Download da tabela em formato compatível com Windows
+download.file(url      = file,
+              destfile =  temp_pop,
+              mode     = "wb")
+
+  # Faixas etárias divulgadas pelo IBGE
+faixas_etarias_IBGE <-
+  read_xls(temp_pop,               # Arquivo temporário com a tabela de projeções
+           sheet = "PE",           # Aba de Pernambuco
+           range = "A7:A25",       # Células com a informação de interesse
+           col_names = FALSE) %>%  # Sem nomes das colunas 
+  pull()                           # Extrai as informações como um vetor
+
+  # Lenvantamento da população masculina
+pop_masc_2010 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "B7:B25",
+           col_names = "Pop_masc") %>%
+  pull()
+
+  # Lenvantamento da população feminina
+pop_fem_2010 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "B30:B48",
+           col_names = "Pop_fem") %>%
+  pull()
+
+  # Lenvantamento da população total
+pop_tot_2010 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "B53:B71",
+           col_names = "Pop_tot") %>%
+  pull()
+
+
+pop_sex_ida_2010 <-
+  tibble(
+    "Idade_inicial" = faixas_etarias_IBGE,
+    "Pop_masc_2010" = pop_masc_2010,
+    "Pop_fem_2010"  = pop_fem_2010,
+    "Pop_tot_2010"  = pop_tot_2010
+  )
+
+pop_sex_ida_2010_ajustada <- 
+pop_sex_ida_2010 %>% 
+  pivot_longer(cols = contains("Pop"),
+               values_to = "Pop",
+               names_to  = "Type") %>% 
+  pivot_wider(names_from = Idade_inicial,
+              values_from = Pop) %>% 
+  rowwise() %>% # para somar nas linhas (caso contrário, resultado igual para todos)
+  mutate("80+" = sum(c_across(`80-84`:`90+`))) %>% 
+  select(-`80-84`, -`85-89`, -`90+`) %>% 
+  pivot_longer(cols      = `0-4`:last_col(),
+               names_to  = "Faixa_idade",
+               values_to = "Pop") %>% 
+  pivot_wider(names_from = Type,
+              values_from = Pop)
+```
+
+
+Para o primeiro período de 2010 e 2015, utilizou-se a tábua de vida de 2013 elaborada pelo próprio IBGE e disponível [aqui](https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&t=resultados). Já para a projeção da população sobrevivente entre 2015 e 2020, foram utilizados os dados do [trabalho 1](https://rpubs.com/rafaeldeacypreste/analise-demografica-pernambuco), conforme orientação da professora.
+
+
+```{r}
+  # 1) Tábua de vida IBGE
+
+  # Repositório do IBGE para a tabela .xls
+file <-
+  "https://ftp.ibge.gov.br/Projecao_da_Populacao/Projecao_da_Populacao_2018/Tabuas_Mortalidade%202010-2060.xls"
+
+  # Arquivo temporário para download da tabela
+temp_tabua_vida <- tempfile()
+
+  # Download da tabela em formato compatível com Windows
+download.file(url      = file,
+              destfile = temp_tabua_vida,
+              mode     = "wb")
+
+tabua_IBGE_masc <-  
+read_xls(temp_tabua_vida,         # Arquivo temporário com a tabela de projeções
+         sheet = "PE",            # Aba de Pernambuco
+         range = "A84:I105") %>%  # Células com a informação de interesse) %>%
+         drop_na() %>%
+           select(Idade, nLx) %>% 
+           pivot_wider(names_from  = Idade,
+                       values_from = nLx) %>% 
+           mutate(
+             "75+" = sum(c_across(`75`:`90+`)),
+             "80+" = sum(c_across(`80`:`90+`)),
+             "0"   = sum(c_across(`0`:`1`))
+           ) %>%
+           select(-`1`, -`80`,-`85`,-`90+`) %>% 
+           pivot_longer(cols      = `0`:last_col(),
+                        names_to  = "Idade",
+                        values_to = "nLx") %>% 
+  mutate(prop_sobrev_IBGE_masc = nLx / lag(nLx, default = 500000)) %>% 
+  filter(Idade != "75+")
+         
+
+
+tabua_IBGE_fem <-   
+read_xls(temp_tabua_vida,         # Arquivo temporário com a tabela de projeções
+         sheet = "PE",            # Aba de Pernambuco
+         range = "K84:S105") %>%  # Células com a informação de interesse) %>%
+         drop_na() %>%
+           select(Idade, nLx) %>% 
+           pivot_wider(names_from  = Idade,
+                       values_from = nLx) %>% 
+           mutate(
+             "75+" = sum(c_across(`75`:`90+`)),
+             "80+" = sum(c_across(`80`:`90+`)),
+             "0"   = sum(c_across(`0`:`1`))
+           ) %>%
+           select(-`1`, -`80`,-`85`,-`90+`) %>% 
+           pivot_longer(cols      = `0`:last_col(),
+                        names_to  = "Idade",
+                        values_to = "nLx") %>% 
+  mutate(prop_sobrev_IBGE_fem = nLx / lag(nLx, default = 500000)) %>% 
+  filter(Idade != "75+")
+
+
+#----------------------------------------------------------------------
+
+  # 2) Tábua de vida trabalho 1
+
+tabua_trab1_masc <- 
+read_xlsx("TabuasVida.xlsx", 
+          sheet = "TV Masc", 
+          range = "A1:H19") %>%
+  select(x, nLx) %>%
+  pivot_wider(names_from  = x,
+              values_from = nLx) %>% 
+  rename("80+" = `80`) %>% 
+  mutate(
+    "0"   = sum(c_across(`0`:`1`)),
+    "75+" = sum(c_across(`75`:`80+`))) %>%  
+  select(-`1`) %>% 
+  select(`0`:`75`, `75+`, `80+`) %>% 
+  pivot_longer(cols      = `0`:last_col(),
+               names_to  = "Idade",
+               values_to = "nLx") %>% 
+  mutate(prop_sobrev_trab1_masc = nLx / lag(nLx, default = 500000)) %>% 
+  filter(Idade != "75+")
+
+  # Tábua feminina
+tabua_trab1_fem <- 
+read_xlsx("TabuasVida.xlsx", 
+          sheet = "TV Fem", 
+          range = "A1:H19") %>%
+  select(x, nLx) %>%
+  pivot_wider(names_from  = x,
+              values_from = nLx) %>% 
+  rename("80+" = `80`) %>% 
+  mutate(
+    "0"   = sum(c_across(`0`:`1`)),
+    "75+" = sum(c_across(`75`:`80+`))) %>%  
+  select(-`1`) %>% 
+  select(`0`:`75`, `75+`, `80+`) %>% 
+  pivot_longer(cols      = `0`:last_col(),
+               names_to  = "Idade",
+               values_to = "nLx") %>% 
+  mutate(prop_sobrev_trab1_fem = nLx / lag(nLx, default = 500000)) %>% 
+  filter(Idade != "75+")
+
+
+```
+
+Para os nascimentos, foram utilizadas as taxas específicas de fecundidade feminina com base nos dados do trabalho 1. Para o período de 2010 a 2015, utilizou-se as taxas calculadas conforme a média móvel de nascimentos centrada em 2015 (com dados de 2014 a 2016) e, para a projeção 2015-2020, utilizou-se as taxas calculadas conforme a média móvel de nascimentos centrada em 2020 (com dados de 2019 a 2021).
+
+```{r}
+
+```
+
+
+> Projeção da população para 2015 e para 2020
+
+```{r}
+projecao_2015 <- 
+pop_sex_ida_2010_ajustada %>% 
+  bind_cols(select(tabua_IBGE_masc, prop_sobrev_IBGE_masc)) %>% 
+  bind_cols(select(tabua_IBGE_fem, prop_sobrev_IBGE_fem)) %>% 
+  mutate(Projecao_2015_masc = round(Pop_masc_2010 * prop_sobrev_IBGE_masc),
+         Projecao_2015_fem = round(Pop_fem_2010 * prop_sobrev_IBGE_fem)) %>% 
+  select(Faixa_idade, contains("Projecao")) %>% 
+  pivot_longer(cols      = contains("Projecao"),
+               values_to = "L_valor",
+               names_to  = "Type") %>% 
+  pivot_wider(names_from  = Faixa_idade,
+              values_from = L_valor) %>% 
+  mutate("75-79" = `75-79` + `80+`)  %>% 
+  pivot_longer(cols      = `0-4`:last_col(),
+                        names_to  = "Faixa_idade",
+                        values_to = "Valor") %>%
+           pivot_wider(names_from  = Type,
+                       values_from = Valor)  %>% 
+  mutate(Projecao_2015_masc = lag(Projecao_2015_masc),
+         Projecao_2015_fem  = lag(Projecao_2015_fem)) 
+
+projecao_2020 <- 
+projecao_2015 %>% 
+  bind_cols(select(tabua_trab1_masc, prop_sobrev_trab1_masc)) %>% 
+  bind_cols(select(tabua_trab1_fem, prop_sobrev_trab1_fem)) %>% 
+  mutate(Projecao_2020_masc = round(Projecao_2015_masc * prop_sobrev_trab1_masc),
+         Projecao_2020_fem = round(Projecao_2015_fem * prop_sobrev_trab1_fem)) %>% 
+  select(Faixa_idade, contains("Projecao_2020")) %>%   
+  pivot_longer(cols      = contains("Projecao"),
+               values_to = "L_valor",
+               names_to  = "Type") %>% 
+  pivot_wider(names_from  = Faixa_idade,
+              values_from = L_valor) %>% 
+  mutate("75-79" = `75-79` + `80+`)  %>% 
+  pivot_longer(cols      = `0-4`:last_col(),
+                        names_to  = "Faixa_idade",
+                        values_to = "Valor") %>%
+           pivot_wider(names_from  = Type,
+                       values_from = Valor)  %>% 
+  mutate(Projecao_2020_masc = lag(Projecao_2020_masc),
+         Projecao_2020_fem  = lag(Projecao_2020_fem)) 
+```
 
 
 
