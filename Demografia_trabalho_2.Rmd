@@ -64,13 +64,8 @@ htmltools::img(src = knitr::image_uri(file.path(getwd(), "as_vert_cor.jpg")),
 
 # {#inic .tabset}
 
-## Introdução 
 
-
-
-Neste documento, estão os explicados os procedimentos para as respostas ao Primeiro trabalho: `TRABALHO 1 - Natalidade/Fecundidade e Mortalidade`, cujo prazo de entrega é dia 22/08/2022. Os pacotes utilizados foram:
-
-```{r, echo=TRUE}
+```{r}
 if (!require("pacman")) install.packages("pacman")
 
 if (!require("microdatasus")) {
@@ -86,15 +81,16 @@ pacman::p_load("microdatasus", ## Download dos dados de 2000 a 2020
                "LexisPlotR",   ## Pacote para Diagramas de Lexix
                "data.table",  
                "scales",
-               janitor)
+               janitor,
+               fdth)
 
 
 options(scipen = 99)
 ```
 
-Agora, pode-se baixar os dados básicos para elaboração do trabalho.
 
-## Questão 1: Estrutura Populacional e avaliação da informação sobre idade
+
+## Parte 1: Estrutura Populacional e avaliação da informação sobre idade
 
 
 
@@ -309,11 +305,168 @@ read_xlsx("TabuasVida.xlsx",
 Para os nascimentos, foram utilizadas as taxas específicas de fecundidade feminina com base nos dados do trabalho 1. Para o período de 2010 a 2015, utilizou-se as taxas calculadas conforme a média móvel de nascimentos centrada em 2015 (com dados de 2014 a 2016) e, para a projeção 2015-2020, utilizou-se as taxas calculadas conforme a média móvel de nascimentos centrada em 2020 (com dados de 2019 a 2021).
 
 ```{r}
+  # População feminina em idade fértil em 2015
+pop_fem_2015 <- 
+  read_xls(temp_pop,
+           sheet     = "PE",
+           range     = "G30:G48",
+           col_names = "Pop_fem") %>%
+  pull()
+
+pop_fem_2015_fertil <- 
+  tibble(
+    "Idade_inicial" = faixas_etarias_IBGE,
+    "Pop_fem_2015"  = pop_fem_2015) %>% 
+    filter(between(Idade_inicial, "10-14", "45-49"))
+
+
+  # População feminina em idade fértil em 2020
+pop_fem_2020 <- 
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "L30:L48",
+           col_names = "Pop_fem") %>%
+  pull()
+
+pop_fem_2020_fertil <- 
+  tibble(
+    "Idade_inicial" = faixas_etarias_IBGE,
+    "Pop_fem_2020" = pop_fem_2020) %>% 
+    filter(between(Idade_inicial, "10-14", "45-49"))
+```
+
+
+```{r, eval=FALSE}
+ # Nascimentos vivos
+  # Download dos microdados do datasus
+dados_sinasc <- fetch_datasus(
+  year_start         = 2000,
+  year_end           = 2020,
+  uf                 = "PE",
+  information_system = "SINASC"
+)
 
 ```
 
 
+```{r, eval=FALSE}
+  # Repositório Ministério da Saúde
+file <- "https://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sinasc/DN21OPEN.zip"
+  
+  # Cria arquivo temporário para download do arquivo .zip
+temp <- tempfile()
+  
+  # Download do arquivo
+utils::download.file(file, temp, mode = "wb")
+
+
+  # Cria pasta temporária para descompactar arquivo .zip
+tempd <- tempdir()
+  
+  # Descompacta o arquivo
+unzip(temp, exdir = tempd)
+
+
+dados_sinasc_2021 <- foreign::read.dbf(str_c(tempd, "\\DNOPEN21.dbf")) %>%                 # Importa a tabela .dbf
+  filter(str_detect(CODMUNRES, "^26")) # Filtra pessoas residentes apenas em PE
+
+  # Remove arquivo e pasta temporárias
+file.remove(temp)
+unlink(tempd)
+
+```
+
+
+```{r, cache=TRUE}
+
+# 2014 a 2016
+
+  # Nascidos vivos por idade da mãe
+nascidos_vivos_ate_2016 <- 
+dados_sinasc %>%
+  select(DTNASC, IDADEMAE) %>% # Seleciona as colunas de interesse
+  mutate(# Transforma Data de óbito em .date
+    DTNASC = str_sub(DTNASC,-4,-1)) %>% # Identifica o ano do nascimento
+  filter(DTNASC %in% 2014:2016) %>% 
+  mutate(IDADEMAE = as.numeric(IDADEMAE)) %>%
+  group_by(DTNASC) %>%
+  filter(between(IDADEMAE, 10, 49)) %>% # Menos que 10 anos deve ser erro de registro
+  mutate(
+    Faixa_etaria = cut(      # Divisão das faixas etárias
+      IDADEMAE,              # Agrupa nas faixas
+      breaks         = c(10, seq(
+        from = 15, to = 50, by = 5
+      )),                    # Períodos de quebra
+      right          = FALSE,
+      include.lowest = TRUE,
+      labels         = faixas_etarias_IBGE[3:10]                                # Nomes dos intervalos etários
+    )
+  ) %>% 
+  arrange(IDADEMAE) %>% 
+  count(DTNASC, Faixa_etaria) %>%
+  group_by(Faixa_etaria) %>%
+  summarise(Nascimentos = round(mean(n)))
+
+  # Tábua específica de fertilidade
+nfx_2015 <- 
+  nascidos_vivos_ate_2016 %>%
+  left_join(pop_fem_2015_fertil, by = c("Faixa_etaria" = "Idade_inicial")) %>%
+  mutate(nfx = Nascimentos / Pop_fem_2015) %>% 
+  select("Faixa_idade" = Faixa_etaria, nfx)
+
+#---------------------------------------------------------------
+# 2019 a 2021
+
+  # Nascidos vivos por idade da mãe
+nascidos_vivos_ate_2020 <- 
+dados_sinasc %>%
+  select(DTNASC, IDADEMAE) %>% # Seleciona as colunas de interesse
+  mutate(# Transforma Data de óbito em .date
+    DTNASC = str_sub(DTNASC,-4,-1)) %>% # Identifica o ano do nascimento
+  filter(DTNASC %in% c(2019, 2020))
+
+
+nascidos_vivos_2021 <- 
+  dados_sinasc_2021 %>%
+  select(DTNASC, IDADEMAE) %>% 
+  mutate(# Transforma Data de óbito em .date
+    DTNASC = str_sub(DTNASC,-4,-1)) 
+    
+nascidos_vivos_ate_2021 <-  
+  nascidos_vivos_ate_2020 %>%
+  bind_rows(nascidos_vivos_2021) %>%
+  mutate(IDADEMAE = as.numeric(IDADEMAE)) %>%
+  group_by(DTNASC) %>%
+  filter(between(IDADEMAE, 10, 49)) %>% # Menos que 10 anos deve ser erro de registro
+  mutate(
+    Faixa_etaria = cut(      # Divisão das faixas etárias
+      IDADEMAE,              # Agrupa nas faixas
+      breaks         = c(10, seq(
+        from = 15, to = 50, by = 5
+      )),                    # Períodos de quebra
+      right          = FALSE,
+      include.lowest = TRUE,
+      labels         = faixas_etarias_IBGE[3:10]                                # Nomes dos intervalos etários
+    )
+  ) %>% 
+  arrange(desc(IDADEMAE)) %>%
+  count(DTNASC, Faixa_etaria) %>%
+  group_by(Faixa_etaria) %>%
+  summarise(Nascimentos = round(mean(n)))
+
+nfx_2020 <-
+  nascidos_vivos_ate_2021 %>%
+  left_join(pop_fem_2020_fertil, by = c("Faixa_etaria" = "Idade_inicial")) %>%
+  mutate(nfx = Nascimentos / Pop_fem_2020) %>% 
+  select("Faixa_idade" = Faixa_etaria, nfx)
+
+```
+
+
+
 > Projeção da população para 2015 e para 2020
+
+A partir das condições apresentadas, as projeções de população para os anos de 2015 e 2020 no Estado de Pernambuco são: 
 
 ```{r}
 projecao_2015 <- 
@@ -337,6 +490,23 @@ pop_sex_ida_2010_ajustada %>%
   mutate(Projecao_2015_masc = lag(Projecao_2015_masc),
          Projecao_2015_fem  = lag(Projecao_2015_fem)) 
 
+  # Nascimentos no período
+faixa_0_4_2015 <- 
+pop_sex_ida_2010_ajustada %>% 
+  left_join(nfx_2015) %>% 
+  mutate(Nascimentos = Pop_fem_2010 * nfx) %>% 
+  summarise(Nascimentos = 5 * round(sum(Nascimentos, na.rm = TRUE))) %>% 
+  pull()
+
+  # Inclui a razão de sexo
+projecao_2015[1, "Projecao_2015_masc"] <- round(faixa_0_4_2015 * 105/205)
+projecao_2015[1, "Projecao_2015_fem"] <- round(faixa_0_4_2015 * 100/205)
+
+
+#----------------------------------------------------------
+
+# Projeção 2020
+
 projecao_2020 <- 
 projecao_2015 %>% 
   bind_cols(select(tabua_trab1_masc, prop_sobrev_trab1_masc)) %>% 
@@ -357,6 +527,51 @@ projecao_2015 %>%
                        values_from = Valor)  %>% 
   mutate(Projecao_2020_masc = lag(Projecao_2020_masc),
          Projecao_2020_fem  = lag(Projecao_2020_fem)) 
+
+faixa_0_4_2020 <- 
+projecao_2015 %>% 
+  left_join(nfx_2020) %>% 
+  mutate(Nascimentos = Projecao_2015_fem * nfx) %>% 
+  summarise(Nascimentos = 5 * round(sum(Nascimentos, na.rm = TRUE))) %>% 
+  pull()
+
+  # Inclui a razão de sexo
+projecao_2020[1, "Projecao_2020_masc"] <- round(faixa_0_4_2020 * 105/205)
+projecao_2020[1, "Projecao_2020_fem"] <- round(faixa_0_4_2020 * 100/205)
+
+projecoes <- 
+pop_sex_ida_2010_ajustada %>%
+  select(-Pop_tot_2010) %>%
+  left_join(projecao_2015) %>%
+  left_join(projecao_2020) %>%
+  select(Faixa_idade, contains("fem"), everything())
+
+
+  # Tabela para .html
+projecoes %>% 
+  kbl(
+    format    = "html",
+    align     = "c",
+    digits    = 0,
+    booktabs  = TRUE,
+    col.names = c(
+      "Faixa Etária",
+      "População Feminina 2010",
+      "População Feminina 2015 (projeção)",
+      "População Masculina 2020 (projeção)",
+      "População Masculina 2010",
+      "População Masculina 2015 (projeção)",
+      "População Feminina 2020 (projeção)"
+    ),
+    format.args = list(big.mark = ",")
+  ) %>%
+  footnote(
+    general  = "Projeção populacional para o ano de 2010 (revisão 2018) e Tábua de vida elaboradas pelo IBGE . Dados do SINASC (Ministério da Saúde) para o cálculo das taxas específicas de fecundidade.  elaborada também pelo IBGE",
+    general_title = "Nota: ",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE
+  ) %>%
+  kable_styling("striped")
 ```
 
 
