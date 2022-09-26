@@ -92,6 +92,573 @@ options(scipen = 99)
 
 ## Parte 1: Estrutura Populacional e avaliação da informação sobre idade
 
+> a)  Construa as pirâmides etárias por grupos de idade para a população da UF escolhida em 1991, 2000, 2010, 2015, 2020 e 2030. Comente os resultados à luz da discussão sobre transição demográfica.
+
+Na resolução dessa questão, foram baixados, a partir do DATASUS, os dados específicos da população residente, em Pernambuco, para cada ano solicitado. Estes dados podem ser consultados em:
+
+<http://tabnet.datasus.gov.br/cgi/deftohtm.exe?ibge/cnv/poppe.def>
+
+A primeira pirâmide etária, referente ao ano censitário de 1991:
+
+```{r, fig.cap='Fonte: IBGE.'}
+
+pop91 <-
+  read_xlsx(
+    'pop91.xlsx'
+  )
+
+abs_virgula <- function (x) {
+  format(
+    abs(x),
+    big.mark = ".",
+    decimal.mark = ",",
+    scientific = FALSE
+  )
+}
+
+
+ 
+pop91 %>%
+  mutate(sexo = factor(sexo, levels = c("Masculino", "Feminino"))) %>%
+  pivot_wider(names_from  = `faixa etária`,
+              values_from = pop) %>%
+  mutate("0 a 4 anos" = `Menor 1 ano` + `1 a 4 anos`) %>%
+  select(sexo, `0 a 4 anos`, `5 a 9 anos`:last_col()) %>%
+  pivot_longer(cols = `0 a 4 anos`:last_col(),
+               names_to = "faixa etária",
+               values_to = "pop") %>%
+  mutate('faixa etária' = factor(`faixa etária`, levels = c("0 a 4 anos", unique(
+    pop91$`faixa etária`
+  )))) %>%
+  ggplot(mapping = aes(
+    x = `faixa etária`,
+    y = ifelse(sexo == "Feminino",  yes = pop, no = -pop),
+    fill = sexo
+  )) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = abs_virgula, limits = (max(pop91$pop)) * c(-1, 1)) +
+  labs(y = "População do estado de Pernambuco em 1991",
+       x = "Faixa etária (em anos)",
+       title = "Pirâmide etária do Estado de Pernambuco em 1991") +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  theme(legend.position = "bottom") +
+  coord_flip()
+```
+
+Segunda pirâmide etária, referente ao ano censitário de 2000:
+
+```{r, fig.cap='Fonte: IBGE.'}
+pop00 <-
+  read_xlsx(
+    'pop00.xlsx'
+  )
+
+abs_virgula <- function (x) {
+  format(
+    abs(x),
+    big.mark = ".",
+    decimal.mark = ",",
+    scientific = FALSE
+  )
+}
+
+pop00 %>%
+  mutate(sexo = factor(sexo, levels = c("Masculino", "Feminino"))) %>%
+  pivot_wider(names_from  = `faixa etária`,
+              values_from = pop) %>% 
+  mutate("0 a 4 anos" = `Menor 1 ano` + `1 a 4 anos`) %>% 
+  select(sexo, `0 a 4 anos`, `5 a 9 anos`:last_col()) %>% 
+  pivot_longer(cols = `0 a 4 anos`:last_col(),
+               names_to = "faixa etária", 
+               values_to = "pop") %>% 
+  mutate('faixa etária' = factor(`faixa etária`, levels = c("0 a 4 anos", unique(pop91$`faixa etária`)))) %>% 
+  ggplot(mapping = aes(
+    x = `faixa etária`,
+    y = ifelse(sexo == "Feminino",  yes = pop, no = -pop),
+    fill = sexo
+  )) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = abs_virgula, limits = (max(pop00$pop)) * c(-1, 1)) +
+  labs(y = "População do estado de Pernambuco em 2000", x = "Faixa etária (em anos)",
+       title = "Pirâmide etária do Estado de Pernambuco em 2000") +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  theme(legend.position = "bottom") +
+  coord_flip()
+```
+
+Terceira pirâmide etária, referente ao ano censitário de 2010:
+
+```{r, fig.cap='Fonte: IBGE.'}
+pop10 <-
+  read_xlsx(
+    'pop10.xlsx'
+  )
+
+pop10 %>%
+  mutate(sexo = factor(sexo, levels = c("Masculino", "Feminino"))) %>%
+  pivot_wider(names_from  = `faixa etária`,
+              values_from = pop) %>% 
+  mutate("0 a 4 anos" = `Menor 1 ano` + `1 a 4 anos`) %>% 
+  select(sexo, `0 a 4 anos`, `5 a 9 anos`:last_col()) %>% 
+  pivot_longer(cols = `0 a 4 anos`:last_col(),
+               names_to = "faixa etária", 
+               values_to = "pop") %>% 
+  mutate('faixa etária' = factor(`faixa etária`, levels = c("0 a 4 anos", unique(pop91$`faixa etária`)))) %>% 
+  ggplot(mapping = aes(
+    x = `faixa etária`,
+    y = ifelse(sexo == "Feminino",  yes = pop, no = -pop),
+    fill = sexo
+  )) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = abs_virgula, limits = (max(pop10$pop)) * c(-1, 1)) +
+  labs(y = "População do estado de Pernambuco em 2000", x = "Faixa etária (em anos)",
+       title = "Pirâmide etária do Estado de Pernambuco em 2010") +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  theme(legend.position = "bottom") +
+  coord_flip()
+```
+
+A construção das pirâmides dos anos de 2015, 2020 e 2030 se dá a partir dos dados disponíveis sobre a projeção populacional, também presentes no DATASUS.
+
+Dados de 2015:
+
+```{r , fig.cap='Fonte: IBGE.'}
+pop15 <-
+  read_xlsx(
+    'pop15.xlsx'
+  )
+
+pop15 %>%
+  mutate(sexo = factor(sexo, levels = c("Masculino", "Feminino")),
+         'faixa etária' = factor(`faixa etária`, levels = unique(pop15$`faixa etária`))) %>%
+  ggplot(mapping = aes(
+    x = `faixa etária`,
+    y = ifelse(sexo == "Feminino",  yes = pop, no = -pop),
+    fill = sexo
+  )) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = abs_virgula, limits = (max(pop15$pop)) * c(-1, 1)) +
+  labs(y = "População do estado de Pernambuco em 2015", x = "Faixa etária (em anos)",
+       title = "Pirâmide etária do Estado de Pernambuco em 2015") +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  theme(legend.position = "bottom") +
+  coord_flip()
+```
+
+2020:
+
+```{r, fig.cap='Fonte: IBGE.'}
+pop20 <-
+  read_xlsx(
+    'pop20.xlsx'
+  )
+
+pop20 %>%
+  mutate(sexo = factor(sexo, levels = c("Masculino", "Feminino")),
+         'faixa etária' = factor(`faixa etária`, levels = unique(pop20$`faixa etária`))) %>%
+  ggplot(mapping = aes(
+    x = `faixa etária`,
+    y = ifelse(sexo == "Feminino",  yes = pop, no = -pop),
+    fill = sexo
+  )) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = abs_virgula, limits = (max(pop20$pop)) * c(-1, 1)) +
+  labs(y = "População do estado de Pernambuco em 2020", x = "Faixa etária (em anos)",
+       title = "Pirâmide etária do Estado de Pernambuco em 2020") +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  theme(legend.position = "bottom") +
+  coord_flip()
+```
+
+Para finalizar, a projeção populacional, do Estado de Pernambuco, para o ano de 2030:
+
+```{r, fig.cap='Fonte: IBGE.'}
+pop30 <-
+  read_xlsx(
+    'pop30.xlsx'
+  )
+
+pop30 %>%
+  mutate(sexo = factor(sexo, levels = c("Masculino", "Feminino")),
+         'faixa etária' = factor(`faixa etária`, levels = unique(pop30$`faixa etária`))) %>%
+  ggplot(mapping = aes(
+    x = `faixa etária`,
+    y = ifelse(sexo == "Feminino",  yes = pop, no = -pop),
+    fill = sexo
+  )) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = abs_virgula, limits = (max(pop30$pop)) * c(-1, 1)) +
+  labs(y = "População projetada do estado de Pernambuco para 2030", x = "Faixa etária (em anos)",
+       title = "Pirâmide etária do Estado de Pernambuco em 2030
+       ") +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  theme(legend.position = "bottom") +
+  coord_flip()
+```
+
+A transição demográfica é um fenômeno e uma teoria que se refere à mudança histórica de taxas de natalidade e/ou mortalidade em sociedades com tecnologia mínima, educação (especialmente das mulheres) e desenvolvimento econômico, para baixas taxas de natalidade e baixas taxas de mortalidade nas sociedades com tecnologia avançada, educação e desenvolvimento econômico, bem como os estágios entre esses dois cenários.
+
+No caso de Pernambuco, assim como também é válido para boa parte do Brasil, é notável uma mudança no perfil da população, em que, a cada censo ou projeção populacional, percebe-se um aumento da população idosa, ou seja, a estrutura etária da UF estudada seguiu um padrão de envelhecimento. Observa-se, neste passo, um aumento na expectativa de vida.
+
+Também é possível notar que os índices de natalidade foram diminuindo conforme mostram os dados obtidos. Isso pode ser um reflexo de diferentes fatores, como uma maior inserção da mulher no mercado de trabalho, por exemplo.
+
+> b)  Para todos os anos acima mencionados, calcule os indicadores de estrutura por idade (proporção de idosos (60 anos e mais), proporção de crianças (0 a 4 anos), proporção de jovens (0 a 14 anos), razão de dependência e índice de envelhecimento). Calcule a idade média e a idade mediana. Calcule e grafique a razão de sexo por grupos de idade para 2010 e 2030. Comente os resultados.
+
+**Parte I)** Proporção populacional:
+
+
+```{r}
+totalpop <-
+  pop91 %>%
+  summarise(sum(pop)) # soma cada valor na coluna 'pop', resultando                       no total da população no ano censitário.
+```
+
+Proporção populacional para o ano censitário de **1991**:
+
+```{r}
+idosos91m <-
+  pop91 %>%
+  filter(sexo == 'Masculino') %>%
+  tail(3) %>%
+  summarise(sum(pop)) # soma da população idosa do sexo masculino
+idosos91f <-
+  pop91 %>%
+  filter(sexo == 'Feminino') %>%
+  tail(3) %>%
+  summarise(sum(pop)) #soma da população idosa do sexo feminino
+
+prop_idosos <- (idosos91m + idosos91f) / totalpop * 100  # proporção da pop. idosa em 1991
+
+kids91m <-
+  pop91 %>%
+  filter(sexo == 'Masculino') %>%
+  head(2) %>%
+  summarise(sum(pop))
+kids91f <-
+  pop91 %>%
+  filter(sexo == 'Feminino') %>%
+  head(2) %>%
+  summarise(sum(pop))
+
+prop_kids <- (kids91m + kids91f) / totalpop * 100
+
+jovens91m <-
+  pop91 %>%
+  filter(sexo == 'Masculino') %>%
+  head(4) %>%
+  summarise(sum(pop))
+jovens91f <-
+  pop91 %>%
+  filter(sexo == 'Feminino') %>%
+  head(4) %>%
+  summarise(sum(pop))
+
+prop_jovens <- (jovens91m + jovens91f) / totalpop * 100
+```
+
+A proporção da população idosa (60 anos ou mais) era de `r round(prop_idosos[1, 1], 2)` % em relação ao total da população. A população de crianças (0 a 4 anos), `r round(prop_kids[1, 1], 2)`%. Por fim, a proporção de jovens (0 a 14 anos) foi de `r round(prop_jovens[1, 1], 2)`%. 
+
+Proporção populacional para o ano censitário de **2000**: 
+
+```{r}
+totalpop00 <-
+  pop00 %>%
+  summarise(sum(pop))
+
+idosos00m <-
+  pop00 %>%
+  filter(sexo == 'Masculino') %>%
+  tail(3) %>%
+  summarise(sum(pop)) # soma da população idosa do sexo masculino
+idosos00f <-
+  pop00 %>%
+  filter(sexo == 'Feminino') %>%
+  tail(3) %>%
+  summarise(sum(pop)) #soma da população idosa do sexo feminino
+
+prop_idosos_2000 <- (idosos00m + idosos00f) / totalpop00 * 100 # proporção da pop. idosa em 1991
+
+kids00m <-
+  pop00 %>%
+  filter(sexo == 'Masculino') %>%
+  head(2) %>%
+  summarise(sum(pop))
+kids00f <-
+  pop00 %>%
+  filter(sexo == 'Feminino') %>%
+  head(2) %>%
+  summarise(sum(pop))
+
+prop_kids_2000 <- (kids00m + kids00f) / totalpop00 * 100
+
+jovens00m <-
+  pop00 %>%
+  filter(sexo == 'Masculino') %>%
+  head(4) %>%
+  summarise(sum(pop))
+jovens00f <-
+  pop00 %>%
+  filter(sexo == 'Feminino') %>%
+  head(4) %>%
+  summarise(sum(pop))
+
+prop_jovens_2000 <- (jovens00m + jovens00f) / totalpop00 * 100
+
+```
+
+No ano censitário de 2000, a população idosa (60 anos ou mais) correspondia a `r round(prop_idosos_2000[1, 1], 2)`0% do total, a população de crianças (0 a 4 anos), `r round(prop_kids_2000[1, 1], 2)`% e de jovens (0 a 14 anos), `r round(prop_jovens_2000[1, 1], 2)`%.
+
+Proporção populacional para o ano censitário de **2010**:
+
+```{r}
+totalpop10 <-
+  pop10 %>%
+  summarise(sum(pop))
+
+idosos10m <-
+  pop10 %>%
+  filter(sexo == 'Masculino') %>%
+  tail(3) %>%
+  summarise(sum(pop)) # soma da população idosa do sexo masculino
+idosos10f <-
+  pop10 %>%
+  filter(sexo == 'Feminino') %>%
+  tail(3) %>%
+  summarise(sum(pop)) #soma da população idosa do sexo feminino
+
+prop_idosos_2010 <- (idosos10m + idosos10f) / totalpop10 * 100 # proporção da pop. idosa em 1991
+
+kids10m <-
+  pop10 %>%
+  filter(sexo == 'Masculino') %>%
+  head(2) %>%
+  summarise(sum(pop))
+kids10f <-
+  pop00 %>%
+  filter(sexo == 'Feminino') %>%
+  head(2) %>%
+  summarise(sum(pop))
+
+prop_kids_2010 <- (kids10m + kids10f) / totalpop10 * 100
+
+jovens10m <-
+  pop10 %>%
+  filter(sexo == 'Masculino') %>%
+  head(4) %>%
+  summarise(sum(pop))
+jovens10f <-
+  pop10 %>%
+  filter(sexo == 'Feminino') %>%
+  head(4) %>%
+  summarise(sum(pop))
+
+prop_jovens_2010 <- (jovens10m + jovens10f) / totalpop10 * 100
+```
+
+No ano censitário de 2010, a população idosa (60 anos ou mais) correspondia a `r round(prop_idosos_2010[1, 1], 2)`% do total, a população de crianças (0 a 4 anos), `r round(prop_kids_2010[1, 1], 2)`% e de jovens (0 a 14 anos), `r round(prop_jovens_2010[1, 1], 2)`%.
+
+Projeção da proporção populacional para o ano de **2015**:
+
+```{r}
+totalpop15 <-
+  pop15 %>%
+  summarise(sum(pop))
+
+idosos15m <-
+  pop15 %>%
+  filter(sexo == 'Masculino') %>%
+  tail(7) %>%
+  summarise(sum(pop)) # soma da população idosa do sexo masculino
+idosos15f <-
+  pop15 %>%
+  filter(sexo == 'Feminino') %>%
+  tail(7) %>%
+  summarise(sum(pop)) #soma da população idosa do sexo feminino
+
+prop_idosos_2015 <- (idosos15m + idosos15f) / totalpop15 * 100 # proporção da pop. idosa em 1991
+
+kids15m <-
+  pop15 %>%
+  filter(sexo == 'Masculino') %>%
+  head(1) %>%
+  summarise(sum(pop))
+kids15f <-
+  pop15 %>%
+  filter(sexo == 'Feminino') %>%
+  head(1) %>%
+  summarise(sum(pop))
+
+prop_kids_2015 <- (kids15m + kids15f) / totalpop15 * 100
+
+jovens15m <-
+  pop15 %>%
+  filter(sexo == 'Masculino') %>%
+  head(3) %>%
+  summarise(sum(pop))
+jovens15f <-
+  pop15 %>%
+  filter(sexo == 'Feminino') %>%
+  head(3) %>%
+  summarise(sum(pop))
+
+prop_jovens_2015 <- (jovens15m + jovens15f) / totalpop15 * 100
+```
+
+Na projeção populacional do ano de 2015, a população idosa (60 anos ou mais) correspondia a `r round(prop_idosos_2015[1, 1], 2)`% do total, a população de crianças (0 a 4 anos), `r round(prop_kids_2015[1, 1], 2)`0% e de jovens (0 a 14 anos), `r round(prop_jovens_2015[1, 1], 2)`%.
+
+Projeção da proporção populacional para o ano de **2020**:
+
+```{r}
+totalpop20 <-
+  pop20 %>%
+  summarise(sum(pop))
+
+idosos20m <-
+  pop20 %>%
+  filter(sexo == 'Masculino') %>%
+  tail(7) %>%
+  summarise(sum(pop)) # soma da população idosa do sexo masculino
+idosos20f <-
+  pop20 %>%
+  filter(sexo == 'Feminino') %>%
+  tail(7) %>%
+  summarise(sum(pop)) #soma da população idosa do sexo feminino
+
+prop_idosos_2020 <- (idosos20m + idosos20f) / totalpop20 * 100 # proporção da pop. idosa em 1991
+
+kids20m <-
+  pop20 %>%
+  filter(sexo == 'Masculino') %>%
+  head(1) %>%
+  summarise(sum(pop))
+kids20f <-
+  pop20 %>%
+  filter(sexo == 'Feminino') %>%
+  head(1) %>%
+  summarise(sum(pop))
+
+prop_kids_2020 <- (kids20m + kids20f) / totalpop20 * 100
+
+jovens20m <-
+  pop20 %>%
+  filter(sexo == 'Masculino') %>%
+  head(3) %>%
+  summarise(sum(pop))
+jovens20f <-
+  pop20 %>%
+  filter(sexo == 'Feminino') %>%
+  head(3) %>%
+  summarise(sum(pop))
+
+prop_jovens_2020 <- (jovens20m + jovens20f) / totalpop20 * 100
+```
+
+Na projeção populacional do ano de 2020, a população idosa (60 anos ou mais) correspondia a `r round(prop_idosos_2020[1, 1], 2)`% do total, a população de crianças (0 a 4 anos), `r round(prop_kids_2020[1, 1], 2)`% e de jovens (0 a 14 anos), `r round(prop_jovens_2020[1, 1], 2)`%.
+
+Projeção da proporção populacional para o ano de **2030**:
+
+```{r}
+totalpop30 <-
+  pop30 %>%
+  summarise(sum(pop))
+
+idosos30m <-
+  pop30 %>%
+  filter(sexo == 'Masculino') %>%
+  tail(7) %>%
+  summarise(sum(pop)) # soma da população idosa do sexo masculino
+idosos30f <-
+  pop30 %>%
+  filter(sexo == 'Feminino') %>%
+  tail(7) %>%
+  summarise(sum(pop)) #soma da população idosa do sexo feminino
+
+prop_idosos_2030 <- (idosos30m + idosos30f) / totalpop30 * 100 # proporção da pop. idosa em 1991
+
+kids30m <-
+  pop30 %>%
+  filter(sexo == 'Masculino') %>%
+  head(1) %>%
+  summarise(sum(pop))
+kids30f <-
+  pop30 %>%
+  filter(sexo == 'Feminino') %>%
+  head(1) %>%
+  summarise(sum(pop))
+
+prop_kids_2030 <- (kids30m + kids30f) / totalpop30 * 100
+
+jovens30m <-
+  pop30 %>%
+  filter(sexo == 'Masculino') %>%
+  head(3) %>%
+  summarise(sum(pop))
+jovens30f <-
+  pop30 %>%
+  filter(sexo == 'Feminino') %>%
+  head(3) %>%
+  summarise(sum(pop))
+
+prop_jovens_2030 <- (jovens30m + jovens30f) / totalpop30 * 100
+```
+
+Na projeção populacional do ano de 2030, a população idosa (60 anos ou mais) correspondia a `r round(prop_idosos_2030[1, 1], 2)`% do total, a população de crianças (0 a 4 anos), `r round(prop_kids_2030[1, 1], 2)`% e de jovens (0 a 14 anos), `r round(prop_jovens_2030[1, 1], 2)`%.
+
+
+**Parte 2)** Índice de Envelhecimento:
+
+O índice de envelhecimento de uma população se defina pelo cálculo do peso da população idosa em relação à população considerada jovem (0 a 14 anos). 
+
+A seguir, serão apresentadas os índices de envelhecimento para os anos censitários de 1991, 2000 e 2010, e as projeções de 2015, 2020 e 2030.
+
+```{r}
+indice_91 <- (idosos91f + idosos91m) / (jovens91f + jovens91m) * 100
+indice_2000 <- (idosos00f + idosos00m) / (jovens00f + jovens00m) * 100
+indice_2010 <- (idosos10f + idosos10m) / (jovens10f + jovens10m) * 100
+indice_2015 <- (idosos15f + idosos15m) / (jovens15f + jovens15m) * 100
+indice_2020 <- (idosos20f + idosos20m) / (jovens20f + jovens20m) * 100
+indice_2030 <- (idosos30f + idosos30m) / (jovens30f + jovens30m) * 100
+
+```
+
+O índice de envelhecimento para os anos censitários de 1991, 2000 e 2010 foram de `r round(indice_91[1, 1], 2)`%, `r round(indice_2000[1, 1], 2)`% e `r round(indice_2010[1, 1], 2)`%, respectivamente.
+
+Já para as projeções realizadas para 2015, 2020 e 2030, os índices de envelhecimento calculados foram de `r round(indice_2015[1, 1], 2)`%, `r round(indice_2020[1, 1], 2)`% e `r round(indice_2030[1, 1], 2)`%, respectivamente.
+
+Observa-se que, a partir dos índices calculados, considerando a população idosa aquela pertencente à faixa etária que compreende 60+ anos de idade completos, existe uma tendência crescente do peso populacional dos idosos na UF estudada. 
+
+**Parte 3)** Razão de Sexo por Grupos de Idade (2010 e 2030):
+
+Para este cálculo, é necessário realizar a divisão simples entre o número de residentes, em um determinado período, para cada grupo de idade, da população masculina sobre a população feminina.
+
+De acordo com o DATASUS, esta razão expressa a relação quantitativa entre os sexos. Se igual a 100, o número de homens e de mulheres se equivalem; acima de 100, há predominância de homens e, abaixo, predominância de mulheres. Informação que pode ser consultada neste [link](http://tabnet.datasus.gov.br/tabdata/LivroIDB/2edrev/a02.pdf).
+
+```{r}
+razao_kids_2010 <- (kids10m / kids10f) * 100
+razao_jovens_2010 <- (jovens10m / jovens10f) * 100
+razao_idosos_2010 <- (idosos10m / idosos10f) * 100
+```
+
+Para o ano censitário de 2010, foram observadas os seguintes índices: 
+
+Para crianças (0 a 4 anos): `r round(razao_kids_2010[1, 1], 2)`.
+Jovens (0 a 14 anos): `r round(razao_jovens_2010[1, 1], 2)`0.
+Idosos: `r round(razao_idosos_2010[1, 1], 2)`.
+
+```{r}
+razao_kids_2030 <- (kids30m / kids30f) * 100
+razao_jovens_2030 <- (jovens30m / jovens30f) * 100
+razao_idosos_2030 <- (idosos30m / idosos30f) * 100
+```
+
+Na projeção para o ano de 2030, foram observados os seguintes índices: 
+
+Para crianças (0 a 4 anos): `r round(razao_kids_2030[1, 1], 2)`.
+Jovens (0 a 14 anos): `r round(razao_jovens_2030[1, 1], 2)`.
+Idosos: `r round(razao_idosos_2030[1, 1], 2)`.
+
+
+
 
 
 ## Parte 2: Projeção de População
@@ -192,10 +759,86 @@ pop_sex_ida_2010 %>%
                values_to = "Pop") %>% 
   pivot_wider(names_from = Type,
               values_from = Pop)
+
+ # Populações para comparar as projeções
+
+  # Lenvantamento da população masculina
+pop_masc_2015 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "G7:G25",
+           col_names = "Pop_masc") %>%
+  pull()
+
+  # Lenvantamento da população feminina
+pop_fem_2015 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "G30:G48",
+           col_names = "Pop_fem") %>%
+  pull()
+
+pop_sex_ida_2015 <-
+  tibble(
+    "Idade_inicial" = faixas_etarias_IBGE,
+    "Pop_masc_2015" = pop_masc_2015,
+    "Pop_fem_2015"  = pop_fem_2015
+  ) %>% 
+  pivot_longer(cols = contains("Pop"),
+               values_to = "Pop",
+               names_to  = "Type") %>% 
+  pivot_wider(names_from = Idade_inicial,
+              values_from = Pop) %>% 
+  rowwise() %>% # para somar nas linhas (caso contrário, resultado igual para todos)
+  mutate("80+" = sum(c_across(`80-84`:`90+`))) %>% 
+  select(-`80-84`, -`85-89`, -`90+`) %>% 
+  pivot_longer(cols      = `0-4`:last_col(),
+               names_to  = "Faixa_idade",
+               values_to = "Pop") %>% 
+  pivot_wider(names_from = Type,
+              values_from = Pop)
+
+  # Lenvantamento da população masculina
+pop_masc_2020 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "L7:L25",
+           col_names = "Pop_masc") %>%
+  pull()
+
+  # Lenvantamento da população masculina
+pop_fem_2020 <-
+  read_xls(temp_pop,
+           sheet = "PE",
+           range = "L30:L48",
+           col_names = "Pop_fem") %>%
+  pull()
+
+
+pop_sex_ida_2020 <-
+  tibble(
+    "Idade_inicial" = faixas_etarias_IBGE,
+    "Pop_masc_2020" = pop_masc_2020,
+    "Pop_fem_2020"  = pop_fem_2020
+  ) %>% 
+  pivot_longer(cols = contains("Pop"),
+               values_to = "Pop",
+               names_to  = "Type") %>% 
+  pivot_wider(names_from = Idade_inicial,
+              values_from = Pop) %>% 
+  rowwise() %>% # para somar nas linhas (caso contrário, resultado igual para todos)
+  mutate("80+" = sum(c_across(`80-84`:`90+`))) %>% 
+  select(-`80-84`, -`85-89`, -`90+`) %>% 
+  pivot_longer(cols      = `0-4`:last_col(),
+               names_to  = "Faixa_idade",
+               values_to = "Pop") %>% 
+  pivot_wider(names_from = Type,
+              values_from = Pop)
+
 ```
 
 
-Para o primeiro período de 2010 e 2015, utilizou-se a tábua de vida de 2013 elaborada pelo próprio IBGE e disponível [aqui](https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&t=resultados). Já para a projeção da população sobrevivente entre 2015 e 2020, foram utilizados os dados do [trabalho 1](https://rpubs.com/rafaeldeacypreste/analise-demografica-pernambuco), conforme orientação da professora.
+Para o primeiro período de 2010 e 2015, utilizou-se a tábua de vida de 2013 elaborada pelo próprio IBGE e disponível [aqui](https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&t=resultados). Já para a projeção da população sobrevivente entre 2015 e 2020, foram utilizados os dados do [trabalho 1](https://rpubs.com/rafaeldeacypreste/analise-demografica-pernambuco).
 
 
 ```{r}
@@ -302,41 +945,43 @@ read_xlsx("TabuasVida.xlsx",
 
 ```
 
-Para os nascimentos, foram utilizadas as taxas específicas de fecundidade feminina com base nos dados do trabalho 1. Para o período de 2010 a 2015, utilizou-se as taxas calculadas conforme a média móvel de nascimentos centrada em 2015 (com dados de 2014 a 2016) e, para a projeção 2015-2020, utilizou-se as taxas calculadas conforme a média móvel de nascimentos centrada em 2020 (com dados de 2019 a 2021).
+Para os nascimentos, foram utilizadas as taxas específicas de fecundidade feminina com base nos dados do trabalho 1. Para o período de 2010 a 2015, utilizou-se as taxas calculadas conforme a média de nascimentos entre 2010 e 2015 com população feminina de referência em 2013 projetada pelo @IBGE2018.
+
+Para a projeção 2015-2020, utilizou-se as taxas calculadas de acordo com a média de nascimentos entre 2016 a 2020, com população feminina de 2018 projetada pelo @IBGE2018. 
 
 ```{r}
   # População feminina em idade fértil em 2015
-pop_fem_2015 <- 
+pop_fem_2013 <- 
   read_xls(temp_pop,
            sheet     = "PE",
-           range     = "G30:G48",
+           range     = "E30:E48",
            col_names = "Pop_fem") %>%
   pull()
 
-pop_fem_2015_fertil <- 
+pop_fem_2013_fertil <- 
   tibble(
     "Idade_inicial" = faixas_etarias_IBGE,
-    "Pop_fem_2015"  = pop_fem_2015) %>% 
+    "Pop_fem_2013"  = pop_fem_2013) %>% 
     filter(between(Idade_inicial, "10-14", "45-49"))
 
 
   # População feminina em idade fértil em 2020
-pop_fem_2020 <- 
+pop_fem_2018 <- 
   read_xls(temp_pop,
            sheet = "PE",
-           range = "L30:L48",
+           range = "J30:J48",
            col_names = "Pop_fem") %>%
   pull()
 
-pop_fem_2020_fertil <- 
+pop_fem_2018_fertil <- 
   tibble(
     "Idade_inicial" = faixas_etarias_IBGE,
-    "Pop_fem_2020" = pop_fem_2020) %>% 
+    "Pop_fem_2018" = pop_fem_2018) %>% 
     filter(between(Idade_inicial, "10-14", "45-49"))
 ```
 
 
-```{r, eval=FALSE}
+```{r, cache=TRUE}
  # Nascimentos vivos
   # Download dos microdados do datasus
 dados_sinasc <- fetch_datasus(
@@ -349,7 +994,7 @@ dados_sinasc <- fetch_datasus(
 ```
 
 
-```{r, eval=FALSE}
+```{r, cache=TRUE, results='hide'}
   # Repositório Ministério da Saúde
 file <- "https://svs.aids.gov.br/dantps/centrais-de-conteudos/dados-abertos/sinasc/DN21OPEN.zip"
   
@@ -377,7 +1022,8 @@ unlink(tempd)
 ```
 
 
-```{r, cache=TRUE}
+```{r}
+
 
 # 2014 a 2016
 
@@ -387,7 +1033,7 @@ dados_sinasc %>%
   select(DTNASC, IDADEMAE) %>% # Seleciona as colunas de interesse
   mutate(# Transforma Data de óbito em .date
     DTNASC = str_sub(DTNASC,-4,-1)) %>% # Identifica o ano do nascimento
-  filter(DTNASC %in% 2014:2016) %>% 
+  filter(DTNASC %in% 2010:2015) %>% 
   mutate(IDADEMAE = as.numeric(IDADEMAE)) %>%
   group_by(DTNASC) %>%
   filter(between(IDADEMAE, 10, 49)) %>% # Menos que 10 anos deve ser erro de registro
@@ -395,11 +1041,11 @@ dados_sinasc %>%
     Faixa_etaria = cut(      # Divisão das faixas etárias
       IDADEMAE,              # Agrupa nas faixas
       breaks         = c(10, seq(
-        from = 15, to = 50, by = 5
+        from = 20, to = 50, by = 5 # 1o intervalo de 10 a 20
       )),                    # Períodos de quebra
       right          = FALSE,
       include.lowest = TRUE,
-      labels         = faixas_etarias_IBGE[3:10]                                # Nomes dos intervalos etários
+      labels         = faixas_etarias_IBGE[4:10]   # Nomes dos intervalos etários
     )
   ) %>% 
   arrange(IDADEMAE) %>% 
@@ -410,8 +1056,8 @@ dados_sinasc %>%
   # Tábua específica de fertilidade
 nfx_2015 <- 
   nascidos_vivos_ate_2016 %>%
-  left_join(pop_fem_2015_fertil, by = c("Faixa_etaria" = "Idade_inicial")) %>%
-  mutate(nfx = Nascimentos / Pop_fem_2015) %>% 
+  left_join(pop_fem_2013_fertil, by = c("Faixa_etaria" = "Idade_inicial")) %>%
+  mutate(nfx = Nascimentos / Pop_fem_2013) %>% 
   select("Faixa_idade" = Faixa_etaria, nfx)
 
 #---------------------------------------------------------------
@@ -423,18 +1069,12 @@ dados_sinasc %>%
   select(DTNASC, IDADEMAE) %>% # Seleciona as colunas de interesse
   mutate(# Transforma Data de óbito em .date
     DTNASC = str_sub(DTNASC,-4,-1)) %>% # Identifica o ano do nascimento
-  filter(DTNASC %in% c(2019, 2020))
+  filter(DTNASC %in% 2016:2020)
 
 
-nascidos_vivos_2021 <- 
-  dados_sinasc_2021 %>%
-  select(DTNASC, IDADEMAE) %>% 
-  mutate(# Transforma Data de óbito em .date
-    DTNASC = str_sub(DTNASC,-4,-1)) 
-    
+
 nascidos_vivos_ate_2021 <-  
   nascidos_vivos_ate_2020 %>%
-  bind_rows(nascidos_vivos_2021) %>%
   mutate(IDADEMAE = as.numeric(IDADEMAE)) %>%
   group_by(DTNASC) %>%
   filter(between(IDADEMAE, 10, 49)) %>% # Menos que 10 anos deve ser erro de registro
@@ -442,11 +1082,11 @@ nascidos_vivos_ate_2021 <-
     Faixa_etaria = cut(      # Divisão das faixas etárias
       IDADEMAE,              # Agrupa nas faixas
       breaks         = c(10, seq(
-        from = 15, to = 50, by = 5
+        from = 20, to = 50, by = 5
       )),                    # Períodos de quebra
       right          = FALSE,
       include.lowest = TRUE,
-      labels         = faixas_etarias_IBGE[3:10]                                # Nomes dos intervalos etários
+      labels         = faixas_etarias_IBGE[4:10]                                # Nomes dos intervalos etários
     )
   ) %>% 
   arrange(desc(IDADEMAE)) %>%
@@ -456,8 +1096,8 @@ nascidos_vivos_ate_2021 <-
 
 nfx_2020 <-
   nascidos_vivos_ate_2021 %>%
-  left_join(pop_fem_2020_fertil, by = c("Faixa_etaria" = "Idade_inicial")) %>%
-  mutate(nfx = Nascimentos / Pop_fem_2020) %>% 
+  left_join(pop_fem_2018_fertil, by = c("Faixa_etaria" = "Idade_inicial")) %>%
+  mutate(nfx = Nascimentos / Pop_fem_2018) %>% 
   select("Faixa_idade" = Faixa_etaria, nfx)
 
 ```
@@ -544,11 +1184,12 @@ pop_sex_ida_2010_ajustada %>%
   select(-Pop_tot_2010) %>%
   left_join(projecao_2015) %>%
   left_join(projecao_2020) %>%
-  select(Faixa_idade, contains("fem"), everything())
+  select(Faixa_idade, contains("fem"), everything()) 
 
 
   # Tabela para .html
 projecoes %>% 
+  adorn_totals() %>% 
   kbl(
     format    = "html",
     align     = "c",
@@ -558,16 +1199,17 @@ projecoes %>%
       "Faixa Etária",
       "População Feminina 2010",
       "População Feminina 2015 (projeção)",
-      "População Masculina 2020 (projeção)",
+      "População Feminina 2020 (projeção)",
       "População Masculina 2010",
       "População Masculina 2015 (projeção)",
-      "População Feminina 2020 (projeção)"
+      "População Masculina 2020 (projeção)"
     ),
-    format.args = list(big.mark = ",")
+    format.args = list(big.mark = ".", decimal.mark = ","),
+    caption     = "Projeções populacionais para o Estado de Pernambuco por sexos em 2015 e 2020" 
   ) %>%
   footnote(
-    general  = "Projeção populacional para o ano de 2010 (revisão 2018) e Tábua de vida elaboradas pelo IBGE . Dados do SINASC (Ministério da Saúde) para o cálculo das taxas específicas de fecundidade.  elaborada também pelo IBGE",
-    general_title = "Nota: ",
+    general  = "Projeção populacional para o ano de 2010 (revisão 2018) e Tábua de vida elaboradas pelo do @IBGE2018. Dados do  Ministério da Saúde, Sistema de Informação sobre Nascidos Vivos (MS/Sinasc) para o cálculo das taxas específicas de fecundidade. ",
+    general_title = "Fontes: ",
     footnote_as_chunk = TRUE,
     threeparttable    = TRUE
   ) %>%
@@ -575,6 +1217,115 @@ projecoes %>%
 ```
 
 
+
+> **c)** No link https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&t=downloads estão disponíveis as projeções da população por sexo e idade para o Brasil (2010-2060) e para as Unidades da Federação - revisão 2018, realizadas pelo IBGE.
+
+> 1.  Com base nessas informações, construa e compare as pirâmides resultantes para os anos de 2010, 2020 e 2060 para o Brasil.
+
+Por meio das Pirâmides Etárias, percebe-se a distribuição da popolução brasileira nos anos 2010 (figura \@ref(fig:piramide-br-2010)), 2020 (\@ref(fig:piramide-br-2020)) e a projeção para o ano 2060 (figura \@ref(fig:piramide-br-2060)). Na primeira transição, percebe-se diminuição da mortalidade e aumento da idade média. Na transição entre 2020 e 2060, percebe-se diminuição da mortalidade, diminuição da fecundidade e estabilização da população, com aumento da taxa de dependência.
+
+
+```{r piramide-br-2010, out.width = '100%', fig.cap='Fonte: projeçoes do IBGE.'}
+knitr::include_graphics(file.path(getwd(), "piramide-br-2010.jpeg"))
+```
+
+```{r piramide-br-2020, out.width = '100%', fig.cap='Fonte: projeçoes do IBGE.'}
+knitr::include_graphics(file.path(getwd(), "piramide-br-2020.jpeg"))
+```
+
+```{r piramide-br-2060, out.width = '100%', fig.cap='Fonte: projeçoes do IBGE.'}
+knitr::include_graphics(file.path(getwd(), "piramide-br-2060.jpeg"))
+```
+
+As pirâmides em vermelho representam a distribuição etária de Pernambuco também nos anos 2010 (figura \@ref(fig:piramide-pe-2010)), 2020 (figura \@ref(fig:piramide-pe-2020)) e 2060 (figura \@ref(fig:piramide-pe-2060)). Percebe-se que os movimentos de transição se repetem, sendo inclusive mais perceptível quando se analisa apenas uma UF separada do total nacional.
+
+
+```{r piramide-pe-2010, out.width = '100%', fig.cap='Fonte: projeçoes do IBGE.'}
+knitr::include_graphics(file.path(getwd(), "piramide-pe-2010.jpeg"))
+```
+
+```{r piramide-pe-2020, out.width = '100%', fig.cap='Fonte: projeçoes do IBGE.'}
+knitr::include_graphics(file.path(getwd(), "piramide-pe-2020.jpeg"))
+```
+
+```{r piramide-pe-2060, out.width = '100%', fig.cap='Fonte: projeçoes do IBGE.'}
+knitr::include_graphics(file.path(getwd(), "piramide-pe-2060.jpeg"))
+```
+
+> 2. Compare os resultados da projeção para a UF escolhida realizada no item (b) e a publicada pelo IBGE
+
+Agora, pode-se comparar os dados das projeções populacionais consolidados acima com as projeções oficiais do IBGE, disponíveis [aqui](https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html?=&t=downloads).
+
+A comparação para o ano de 2015 está na tabela \@ref(tab:comparacao-2015). As projeções do total das populações feminina e masculina ficaram próximas à realizada pelo @IBGE2018. Esse resultado, entretanto, envolveu uma subestimação dos valores de nascimentos e uma sobre-estimação das populações das faixas etárias acima dos 70 anos.
+
+```{r comparacao-2015}
+comparacao_2015 <- 
+projecoes %>% 
+  select(Faixa_idade, contains("2015")) %>% 
+  left_join(pop_sex_ida_2015) %>% 
+  select(Faixa_idade, contains("fem"), contains("masc")) %>% 
+  adorn_totals()
+
+comparacao_2015 %>% 
+    kbl(
+    format    = "html",
+    align     = "c",
+    digits    = 0,
+    booktabs  = TRUE,
+    col.names = c(
+      "Faixa Etária",
+      "População Feminina 2015 (projeção)",
+      "População Feminina 2015 (IBGE)",
+      "População Masculina 2015 (projeção)",
+      "População Masculina 2020 (IBGE)"
+    ),
+    format.args = list(big.mark = ".", decimal.mark = ","),
+    caption     = "Comparação entre as projeções próprias e as realizadas pelo IBGE para o ano de 2015" 
+  ) %>%
+  footnote(
+    general  = "Projeção populacional para o ano de 2015 (revisão 2018) do @IBGE2018.",
+    general_title = "Fontes: ",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE
+  ) %>%
+  kable_styling("striped")
+
+```
+
+A comparação para o ano de 2015 está na tabela \@ref(tab:comparacao-2020). Semelhantemente à projeção para 2015, as projeções do total das populações feminina e masculina ficaram próximas à realizada pelo @IBGE2018. Esse resultado, novamente, envolveu uma subestimação dos valores de nascimentos e uma sobre-estimação das populações das faixas etárias acima dos 70 anos.
+
+```{r comparacao-2020}
+comparacao_2020 <- 
+projecoes %>% 
+  select(Faixa_idade, contains("2020")) %>% 
+  left_join(pop_sex_ida_2020) %>% 
+  select(Faixa_idade, contains("fem"), contains("masc")) %>% 
+  adorn_totals()
+
+comparacao_2020 %>% 
+    kbl(
+    format    = "html",
+    align     = "c",
+    digits    = 0,
+    booktabs  = TRUE,
+    col.names = c(
+      "Faixa Etária",
+      "População Feminina 2020 (projeção)",
+      "População Feminina 2020 (IBGE)",
+      "População Masculina 2020 (projeção)",
+      "População Masculina 2020 (IBGE)"
+    ),
+    format.args = list(big.mark = ".", decimal.mark = ","),
+    caption     = "Comparação entre as projeções próprias e as realizadas pelo IBGE para o ano de 2020" 
+  ) %>%
+  footnote(
+    general  = "Projeção populacional para o ano de 2020 (revisão 2018) do @IBGE2018.",
+    general_title = "Fontes: ",
+    footnote_as_chunk = TRUE,
+    threeparttable    = TRUE
+  ) %>%
+  kable_styling("striped")
+```
 
 
 
